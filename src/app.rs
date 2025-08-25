@@ -1,10 +1,11 @@
-use iced::{
-    alignment, event, keyboard, widget::{column, container, row, text}, 
-    window, Color, Element, Event, Length, Subscription, Task, Theme, exit
-};
 use crate::letter::Letter;
 use crate::message::Message;
 use crate::utils::color::hsl_to_rgb;
+use iced::{
+    alignment, event, exit, keyboard,
+    widget::{column, container, row, text},
+    window, Color, Element, Event, Length, Subscription, Task, Theme,
+};
 
 /// Main application state for Words with Toddlers
 pub struct WordsWithToddlers {
@@ -20,7 +21,7 @@ impl WordsWithToddlers {
                 letters: Vec::new(),
                 is_fullscreen: false,
             },
-            Task::none()
+            Task::none(),
         )
     }
 
@@ -33,7 +34,7 @@ impl WordsWithToddlers {
     }
 
     /// Builds the user interface
-    pub fn view(&self) -> Element<Message> {
+    pub fn view(&self) -> Element<'_, Message> {
         let content = if self.letters.is_empty() {
             self.build_welcome_screen()
         } else {
@@ -52,13 +53,11 @@ impl WordsWithToddlers {
 
     /// Sets up event subscriptions for keyboard input
     pub fn subscription(&self) -> Subscription<Message> {
-        event::listen_with(|event, _status, _id| {
-            match event {
-                Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
-                    Some(Message::KeyPressed(key))
-                }
-                _ => None
+        event::listen_with(|event, _status, _id| match event {
+            Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
+                Some(Message::KeyPressed(key))
             }
+            _ => None,
         })
     }
 
@@ -103,7 +102,8 @@ impl WordsWithToddlers {
                     } else {
                         c
                     };
-                    self.letters.push(Letter::new(character, self.random_color()));
+                    self.letters
+                        .push(Letter::new(character, self.random_color()));
                 }
             }
         }
@@ -121,39 +121,38 @@ impl WordsWithToddlers {
         self.is_fullscreen = !self.is_fullscreen;
         window::change_mode(
             window::Id::unique(),
-            if self.is_fullscreen { 
-                window::Mode::Fullscreen 
-            } else { 
-                window::Mode::Windowed 
-            }
+            if self.is_fullscreen {
+                window::Mode::Fullscreen
+            } else {
+                window::Mode::Windowed
+            },
         )
     }
 
     /// Builds the welcome screen with multicolored title
-    fn build_welcome_screen(&self) -> Element<Message> {
+    fn build_welcome_screen(&self) -> Element<'_, Message> {
         let welcome_text = "Welcome to Words With Toddlers!";
-        let mut welcome_row = row![]
-            .spacing(5)
-            .align_y(alignment::Vertical::Center);
-        
+        let mut welcome_row = row![].spacing(5).align_y(alignment::Vertical::Center);
+
         for (i, ch) in welcome_text.chars().enumerate() {
             let hue = (i as f32 * 360.0 / welcome_text.len() as f32) % 360.0;
             let (r, g, b) = hsl_to_rgb(hue, 0.8, 0.6);
             welcome_row = welcome_row.push(
                 text(ch.to_string())
                     .size(50)
-                    .color(Color::from_rgb(r, g, b))
+                    .color(Color::from_rgb(r, g, b)),
             );
         }
-        
-        let instructions = text("Type up to 25 letters or numbers!\nPress Enter to clear • Escape to exit")
-            .size(30)
-            .color(Color::from_rgb(0.6, 0.6, 0.6));
-        
+
+        let instructions =
+            text("Type up to 25 letters or numbers!\nPress Enter to clear • Escape to exit")
+                .size(30)
+                .color(Color::from_rgb(0.6, 0.6, 0.6));
+
         container(
             column![welcome_row, instructions]
                 .spacing(30)
-                .align_x(alignment::Horizontal::Center)
+                .align_x(alignment::Horizontal::Center),
         )
         .width(Length::Fill)
         .height(Length::Fill)
@@ -163,18 +162,16 @@ impl WordsWithToddlers {
     }
 
     /// Builds the display for typed letters
-    fn build_letters_display(&self) -> Element<Message> {
+    fn build_letters_display(&self) -> Element<'_, Message> {
         let letter_size = self.calculate_letter_size();
-        
-        let mut letters_row = row![]
-            .spacing(10)
-            .align_y(alignment::Vertical::Center);
+
+        let mut letters_row = row![].spacing(10).align_y(alignment::Vertical::Center);
 
         for letter in &self.letters {
             letters_row = letters_row.push(
                 text(letter.character.to_string())
                     .size(letter_size)
-                    .color(letter.color)
+                    .color(letter.color),
             );
         }
 
