@@ -1,0 +1,8 @@
+[package]
+name = "words-with-toddlers"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+iced = { version = "0.13", features = ["canvas", "tokio"] }
+rand = "0.8"
