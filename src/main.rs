@@ -2,38 +2,45 @@ mod app;
 mod letter;
 mod message;
 mod utils;
+mod dictionary;
+mod discovered_word;
+mod session;
 
 use app::WordsWithToddlers;
 use iced::{window, Size};
+use std::env;
 
 /// Entry point for the Words with Toddlers application
 ///
 /// This creates a toddler-friendly typing application with:
 /// - Large, colorful letters
-/// - Support for up to 25 characters
+/// - Support for unlimited characters with line wrapping
 /// - Fullscreen capability
 /// - Always-on-top window setting
 fn main() -> iced::Result {
-    iced::application(
-        "Words with Toddlers",
-        WordsWithToddlers::update,
-        WordsWithToddlers::view,
-    )
-    .window(create_window_settings())
-    .subscription(WordsWithToddlers::subscription)
-    .theme(WordsWithToddlers::theme)
-    .run_with(WordsWithToddlers::new)
+    // Log the current working directory for debugging
+    if let Ok(cwd) = env::current_dir() {
+        eprintln!("Words with Toddlers started from: {:?}", cwd);
+    }
+    iced::application("Words with Toddlers", WordsWithToddlers::update, WordsWithToddlers::view)
+        .window(create_window_settings())
+        .subscription(WordsWithToddlers::subscription)
+        .theme(WordsWithToddlers::theme)
+        .run_with(WordsWithToddlers::new)
 }
 
 /// Creates the window settings for the application
 fn create_window_settings() -> window::Settings {
     window::Settings {
         size: Size::new(1200.0, 800.0),
-        position: window::Position::Centered,
+        // Don't specify position - let the OS decide based on current display
+        position: window::Position::Default,
         decorations: true,
         resizable: true,
         transparent: false,
-        level: window::Level::AlwaysOnTop,
+        // Use Normal level initially to respect current display
+        level: window::Level::Normal,
+        visible: true,
         ..Default::default()
     }
 }

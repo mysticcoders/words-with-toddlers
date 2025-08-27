@@ -7,4 +7,6 @@ pub enum Message {
     KeyPressed(keyboard::Key),
     /// Triggered to toggle fullscreen mode
     ToggleFullscreen,
+    /// Triggered when window opens to set it to always on top
+    WindowOpened,
 }
