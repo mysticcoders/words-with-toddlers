@@ -17,6 +17,7 @@ pub struct WordsWithToddlers {
     is_fullscreen: bool,
     letters_scroll_id: ScrollableId,
     has_started_typing: bool,
+    cursor_visible: bool,
 }
 
 impl WordsWithToddlers {
@@ -30,6 +31,7 @@ impl WordsWithToddlers {
                 is_fullscreen: false,
                 letters_scroll_id: ScrollableId::unique(),
                 has_started_typing: false,
+                cursor_visible: true,
             },
             // Send a message after a short delay to set window to AlwaysOnTop
             Task::perform(
@@ -50,6 +52,10 @@ impl WordsWithToddlers {
             Message::WindowOpened => {
                 // Set window to AlwaysOnTop after it's been created on current display
                 window::change_level(window::Id::unique(), window::Level::AlwaysOnTop)
+            }
+            Message::ToggleCursor => {
+                self.cursor_visible = !self.cursor_visible;
+                Task::none()
             }
         }
     }
@@ -89,14 +95,18 @@ impl WordsWithToddlers {
             .into()
     }
 
-    /// Sets up event subscriptions for keyboard input
+    /// Sets up event subscriptions for keyboard input and cursor blinking
     pub fn subscription(&self) -> Subscription<Message> {
-        event::listen_with(|event, _status, _id| match event {
-            Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
-                Some(Message::KeyPressed(key))
-            }
-            _ => None,
-        })
+        Subscription::batch([
+            event::listen_with(|event, _status, _id| match event {
+                Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
+                    Some(Message::KeyPressed(key))
+                }
+                _ => None,
+            }),
+            iced::time::every(std::time::Duration::from_millis(530))
+                .map(|_| Message::ToggleCursor),
+        ])
     }
 
     /// Returns the application theme
@@ -368,7 +378,7 @@ impl WordsWithToddlers {
                     .color(letter.color),
             );
             letter_count += 1;
-            
+
             // Check if we need to wrap to next line
             if letter_count >= letters_per_row {
                 letters_column = letters_column.push(current_row);
@@ -378,11 +388,23 @@ impl WordsWithToddlers {
                 letter_count = 0;
             }
         }
-        
-        // Add any remaining letters in the last row
-        if letter_count > 0 {
-            letters_column = letters_column.push(current_row);
-        }
+
+        // Add blinking cursor after the last letter
+        // Always add cursor to prevent layout shift, but toggle transparency
+        let cursor_color = if self.cursor_visible {
+            Color::from_rgb(1.0, 1.0, 1.0)
+        } else {
+            Color::from_rgba(1.0, 1.0, 1.0, 0.0)
+        };
+        current_row = current_row.push(
+            text("|")
+                .size(letter_size)
+                .color(cursor_color),
+        );
+
+        // Add any remaining letters (and cursor) in the last row
+        // Cursor is always present now, so always add the row
+        letters_column = letters_column.push(current_row);
         
         // Wrap in scrollable container if content gets too tall
         container(

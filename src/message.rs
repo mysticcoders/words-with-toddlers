@@ -9,4 +9,6 @@ pub enum Message {
     ToggleFullscreen,
     /// Triggered when window opens to set it to always on top
     WindowOpened,
+    /// Triggered periodically to toggle cursor visibility
+    ToggleCursor,
 }
