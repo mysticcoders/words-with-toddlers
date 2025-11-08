@@ -11,4 +11,10 @@ pub enum Message {
     WindowOpened,
     /// Triggered periodically to toggle cursor visibility
     ToggleCursor,
+    /// Navigate to settings screen
+    NavigateToSettings,
+    /// Navigate to welcome screen
+    NavigateToWelcome,
+    /// Select a sound by name
+    SelectSound(String),
 }

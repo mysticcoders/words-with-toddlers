@@ -1,13 +1,22 @@
 use iced::{
-    alignment, event, keyboard, widget::{column, container, row, text, scrollable, Row, scrollable::Id as ScrollableId}, 
+    alignment, event, keyboard, widget::{button, column, container, row, text, scrollable, Row, scrollable::Id as ScrollableId},
     window, Color, Element, Event, Length, Subscription, Task, Theme, exit
 };
+use std::sync::{Arc, atomic::AtomicBool};
 use crate::letter::Letter;
 use crate::message::Message;
 use crate::utils::color::hsl_to_rgb;
 use crate::dictionary::Dictionary;
 use crate::discovered_word::DiscoveredWord;
 use crate::session::Session;
+
+/// Represents the different screens in the application
+#[derive(Debug, Clone, PartialEq)]
+pub enum Screen {
+    Welcome,
+    Main,
+    Settings,
+}
 
 /// Main application state for Words with Toddlers
 pub struct WordsWithToddlers {
@@ -18,11 +27,17 @@ pub struct WordsWithToddlers {
     letters_scroll_id: ScrollableId,
     has_started_typing: bool,
     cursor_visible: bool,
+    sound_playing: Arc<AtomicBool>,
+    current_screen: Screen,
+    selected_sound: String,
 }
 
 impl WordsWithToddlers {
     /// Creates a new instance of the application
     pub fn new() -> (Self, Task<Message>) {
+        // Load saved configuration
+        let config = crate::config::load_config();
+
         (
             WordsWithToddlers {
                 letters: Vec::new(),
@@ -32,6 +47,9 @@ impl WordsWithToddlers {
                 letters_scroll_id: ScrollableId::unique(),
                 has_started_typing: false,
                 cursor_visible: true,
+                sound_playing: Arc::new(AtomicBool::new(false)),
+                current_screen: Screen::Welcome,
+                selected_sound: config.selected_sound,
             },
             // Send a message after a short delay to set window to AlwaysOnTop
             Task::perform(
@@ -57,42 +75,68 @@ impl WordsWithToddlers {
                 self.cursor_visible = !self.cursor_visible;
                 Task::none()
             }
+            Message::NavigateToSettings => {
+                self.current_screen = Screen::Settings;
+                Task::none()
+            }
+            Message::NavigateToWelcome => {
+                self.current_screen = Screen::Welcome;
+                Task::none()
+            }
+            Message::SelectSound(sound_name) => {
+                self.selected_sound = sound_name.clone();
+                // Save configuration
+                let config = crate::config::AppConfig {
+                    selected_sound: sound_name,
+                };
+                if let Err(e) = crate::config::save_config(&config) {
+                    eprintln!("Failed to save config: {}", e);
+                }
+                Task::none()
+            }
         }
     }
 
     /// Builds the user interface
     pub fn view(&self) -> Element<Message> {
-        let mut main_column = column![]
-            .spacing(20)
-            .align_x(alignment::Horizontal::Center);
-        
-        // Add discovered words at the top if any exist
-        if !self.discovered_words.is_empty() {
-            main_column = main_column.push(self.build_discovered_words_display());
-        }
-        
-        // Add the main content
-        let content = if self.letters.is_empty() {
-            if self.has_started_typing {
-                self.build_placeholder_screen()
-            } else {
-                self.build_welcome_screen()
-            }
-        } else {
-            self.build_letters_display()
-        };
-        
-        main_column = main_column.push(content);
+        // Route to different screens based on current_screen
+        match self.current_screen {
+            Screen::Welcome => self.build_welcome_screen(),
+            Screen::Settings => self.build_settings_screen(),
+            Screen::Main => {
+                let mut main_column = column![]
+                    .spacing(20)
+                    .align_x(alignment::Horizontal::Center);
 
-        container(main_column)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .padding(20)
-            .style(|_theme: &Theme| container::Style {
-                background: Some(iced::Background::Color(Color::from_rgb(0.05, 0.05, 0.1))),
-                ..Default::default()
-            })
-            .into()
+                // Add discovered words at the top if any exist
+                if !self.discovered_words.is_empty() {
+                    main_column = main_column.push(self.build_discovered_words_display());
+                }
+
+                // Add the main content
+                let content = if self.letters.is_empty() {
+                    if self.has_started_typing {
+                        self.build_placeholder_screen()
+                    } else {
+                        self.build_welcome_screen()
+                    }
+                } else {
+                    self.build_letters_display()
+                };
+
+                main_column = main_column.push(content);
+
+                container(main_column)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .padding(20)
+                    .style(|_theme: &Theme| container::Style {
+                        background: Some(iced::Background::Color(Color::from_rgb(0.05, 0.05, 0.1))),
+                        ..Default::default()
+                    })
+                    .into()
+            }
+        }
     }
 
     /// Sets up event subscriptions for keyboard input and cursor blinking
@@ -140,11 +184,17 @@ impl WordsWithToddlers {
                 
                 // Check for any last word before clearing
                 self.check_and_save_word();
-                
+
+                // Play selected sound effect
+                let sound_path = crate::system_sound::get_sound_path(&self.selected_sound);
+                crate::audio::play_sound(self.sound_playing.clone(), sound_path.to_string());
+
                 // Clear letters and discovered words, mark that we've started typing
                 self.letters.clear();
                 self.discovered_words.clear();
                 self.has_started_typing = true;
+                // Return to welcome screen
+                self.current_screen = Screen::Welcome;
             }
             keyboard::Key::Named(keyboard::key::Named::F11) => {
                 return Task::done(Message::ToggleFullscreen);
@@ -171,6 +221,11 @@ impl WordsWithToddlers {
     fn add_character_from_string(&mut self, s: String) {
         if let Some(c) = s.chars().next() {
             if c.is_alphabetic() || c.is_numeric() {
+                // Switch to Main screen on first character
+                if self.current_screen == Screen::Welcome {
+                    self.current_screen = Screen::Main;
+                }
+
                 let character = if c.is_alphabetic() {
                     c.to_uppercase().next().unwrap()
                 } else {
@@ -266,9 +321,26 @@ impl WordsWithToddlers {
         let instructions = text("Type as much as you want! Press Space to save words!\nPress Enter to clear all • Escape to exit")
             .size(30)
             .color(Color::from_rgb(0.6, 0.6, 0.6));
-        
+
+        // Settings button
+        let settings_button = button(
+            text("⚙️  Settings")
+                .size(25)
+        )
+        .padding(15)
+        .style(|_theme: &Theme, _status| button::Style {
+            background: Some(iced::Background::Color(Color::from_rgb(0.25, 0.25, 0.3))),
+            border: iced::Border {
+                color: Color::from_rgb(0.4, 0.4, 0.45),
+                width: 1.0,
+                radius: 10.0.into(),
+            },
+            ..Default::default()
+        })
+        .on_press(Message::NavigateToSettings);
+
         container(
-            column![welcome_row, instructions]
+            column![welcome_row, instructions, settings_button]
                 .spacing(30)
                 .align_x(alignment::Horizontal::Center),
         )
@@ -277,6 +349,93 @@ impl WordsWithToddlers {
         .align_x(alignment::Horizontal::Center)
         .align_y(alignment::Vertical::Center)
         .into()
+    }
+
+    /// Builds the settings screen for sound selection
+    fn build_settings_screen(&self) -> Element<Message> {
+        let title = text("Sound Settings")
+            .size(60)
+            .color(Color::from_rgb(0.9, 0.9, 1.0));
+
+        let subtitle = text("Select the sound that plays when you press Enter")
+            .size(25)
+            .color(Color::from_rgb(0.6, 0.6, 0.6));
+
+        // Create grid of sound buttons
+        let mut sounds_grid = column![]
+            .spacing(15)
+            .align_x(alignment::Horizontal::Center);
+
+        // Create rows of 3 sound buttons each
+        let sounds = crate::system_sound::SOUNDS;
+        for row_sounds in sounds.chunks(3) {
+            let mut sound_row = row![]
+                .spacing(15)
+                .align_y(alignment::Vertical::Center);
+
+            for sound in row_sounds {
+                let is_selected = sound.name == self.selected_sound;
+                let button_color = if is_selected {
+                    Color::from_rgb(0.2, 0.6, 0.9) // Blue for selected
+                } else {
+                    Color::from_rgb(0.3, 0.3, 0.35) // Gray for unselected
+                };
+
+                let sound_button = button(
+                    text(sound.display_name)
+                        .size(30)
+                        .color(if is_selected {
+                            Color::from_rgb(1.0, 1.0, 1.0)
+                        } else {
+                            Color::from_rgb(0.8, 0.8, 0.8)
+                        })
+                )
+                .padding(20)
+                .style(move |_theme: &Theme, _status| button::Style {
+                    background: Some(iced::Background::Color(button_color)),
+                    border: iced::Border {
+                        color: if is_selected {
+                            Color::from_rgb(0.4, 0.8, 1.0)
+                        } else {
+                            Color::from_rgb(0.4, 0.4, 0.45)
+                        },
+                        width: if is_selected { 3.0 } else { 1.0 },
+                        radius: 10.0.into(),
+                    },
+                    ..Default::default()
+                })
+                .on_press(Message::SelectSound(sound.name.to_string()));
+
+                sound_row = sound_row.push(sound_button);
+            }
+
+            sounds_grid = sounds_grid.push(sound_row);
+        }
+
+        // Back button
+        let back_button = button(
+            text("← Back to Welcome")
+                .size(25)
+        )
+        .padding(15)
+        .on_press(Message::NavigateToWelcome);
+
+        let content = column![
+            title,
+            subtitle,
+            sounds_grid,
+            back_button,
+        ]
+        .spacing(40)
+        .align_x(alignment::Horizontal::Center);
+
+        container(content)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .padding(40)
+            .align_x(alignment::Horizontal::Center)
+            .align_y(alignment::Vertical::Center)
+            .into()
     }
 
     /// Builds the display for discovered words with wrapping

@@ -5,6 +5,9 @@ mod utils;
 mod dictionary;
 mod discovered_word;
 mod session;
+mod audio;
+mod system_sound;
+mod config;
 
 use app::WordsWithToddlers;
 use iced::{window, Size};
