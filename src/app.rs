@@ -1,5 +1,5 @@
 use iced::{
-    alignment, event, keyboard, widget::{button, column, container, row, text, scrollable, Row, scrollable::Id as ScrollableId},
+    alignment, event, keyboard, widget::{button, checkbox, column, container, row, text, scrollable, Row, scrollable::Id as ScrollableId},
     window, Color, Element, Event, Length, Subscription, Task, Theme, exit
 };
 use std::sync::{Arc, atomic::AtomicBool};
@@ -30,6 +30,7 @@ pub struct WordsWithToddlers {
     sound_playing: Arc<AtomicBool>,
     current_screen: Screen,
     selected_sound: String,
+    typewriter_mode: bool,
 }
 
 impl WordsWithToddlers {
@@ -50,6 +51,7 @@ impl WordsWithToddlers {
                 sound_playing: Arc::new(AtomicBool::new(false)),
                 current_screen: Screen::Welcome,
                 selected_sound: config.selected_sound,
+                typewriter_mode: config.typewriter_mode,
             },
             // Send a message after a short delay to set window to AlwaysOnTop
             Task::perform(
@@ -85,9 +87,28 @@ impl WordsWithToddlers {
             }
             Message::SelectSound(sound_name) => {
                 self.selected_sound = sound_name.clone();
+                
+                // Play the newly selected sound
+                let sound_path = crate::system_sound::get_sound_path(&sound_name);
+                crate::audio::play_sound(self.sound_playing.clone(), sound_path.to_string());
+                
                 // Save configuration
                 let config = crate::config::AppConfig {
                     selected_sound: sound_name,
+                    typewriter_mode: self.typewriter_mode,
+                };
+                if let Err(e) = crate::config::save_config(&config) {
+                    eprintln!("Failed to save config: {}", e);
+                }
+                Task::none()
+            }
+            Message::ToggleTypewriterMode(enabled) => {
+                self.typewriter_mode = enabled;
+                
+                // Save configuration
+                let config = crate::config::AppConfig {
+                    selected_sound: self.selected_sound.clone(),
+                    typewriter_mode: enabled,
                 };
                 if let Err(e) = crate::config::save_config(&config) {
                     eprintln!("Failed to save config: {}", e);
@@ -201,15 +222,27 @@ impl WordsWithToddlers {
             }
             keyboard::Key::Named(keyboard::key::Named::Backspace) => {
                 self.letters.pop();
+                // Play typewriter sound if enabled
+                if self.typewriter_mode {
+                    crate::audio::play_sound(self.sound_playing.clone(), crate::system_sound::TYPEWRITER_SOUND.to_string());
+                }
             }
             keyboard::Key::Character(s) => {
                 self.add_character_from_string(s.to_string());
+                // Play typewriter sound if enabled
+                if self.typewriter_mode {
+                    crate::audio::play_sound(self.sound_playing.clone(), crate::system_sound::TYPEWRITER_SOUND.to_string());
+                }
                 return scrollable::snap_to(self.letters_scroll_id.clone(), scrollable::RelativeOffset { x: 0.0, y: 1.0 });
             }
             keyboard::Key::Named(keyboard::key::Named::Space) => {
                 // Check for word before adding space
                 self.check_and_save_word();
                 self.add_space();
+                // Play typewriter sound if enabled
+                if self.typewriter_mode {
+                    crate::audio::play_sound(self.sound_playing.clone(), crate::system_sound::TYPEWRITER_SOUND.to_string());
+                }
                 return scrollable::snap_to(self.letters_scroll_id.clone(), scrollable::RelativeOffset { x: 0.0, y: 1.0 });
             }
             _ => {}
@@ -412,6 +445,29 @@ impl WordsWithToddlers {
             sounds_grid = sounds_grid.push(sound_row);
         }
 
+        // Typewriter mode checkbox
+        let typewriter_checkbox = checkbox(
+            "Enable typewriter sound for every keystroke",
+            self.typewriter_mode,
+        )
+        .on_toggle(Message::ToggleTypewriterMode)
+        .size(25)
+        .text_size(25)
+        .spacing(10);
+        
+        // Wrap checkbox in a container for styling
+        let typewriter_section = container(typewriter_checkbox)
+            .padding(20)
+            .style(|_theme: &Theme| container::Style {
+                background: Some(iced::Background::Color(Color::from_rgba(0.2, 0.2, 0.25, 0.5))),
+                border: iced::Border {
+                    color: Color::from_rgb(0.3, 0.3, 0.35),
+                    width: 1.0,
+                    radius: 10.0.into(),
+                },
+                ..Default::default()
+            });
+
         // Back button
         let back_button = button(
             text("← Back to Welcome")
@@ -424,6 +480,7 @@ impl WordsWithToddlers {
             title,
             subtitle,
             sounds_grid,
+            typewriter_section,
             back_button,
         ]
         .spacing(40)

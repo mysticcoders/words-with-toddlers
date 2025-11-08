@@ -6,7 +6,7 @@ pub struct SystemSound {
     pub path: &'static str,
 }
 
-/// Curated list of favorite system sounds
+/// Curated list of available wav sounds
 pub const SOUNDS: &[SystemSound] = &[
     SystemSound {
         name: "Swoosh",
@@ -24,21 +24,6 @@ pub const SOUNDS: &[SystemSound] = &[
         path: "sounds/Tri-Tone.wav",
     },
     SystemSound {
-        name: "Pop",
-        display_name: "Pop",
-        path: "/System/Library/Sounds/Pop.aiff",
-    },
-    SystemSound {
-        name: "Tink",
-        display_name: "Tink",
-        path: "/System/Library/Sounds/Tink.aiff",
-    },
-    SystemSound {
-        name: "Glass",
-        display_name: "Glass",
-        path: "/System/Library/Sounds/Glass.aiff",
-    },
-    SystemSound {
         name: "Chime",
         display_name: "Chime",
         path: "sounds/Chime.wav",
@@ -53,12 +38,10 @@ pub const SOUNDS: &[SystemSound] = &[
         display_name: "Ding",
         path: "sounds/Ding.wav",
     },
-    SystemSound {
-        name: "Hero",
-        display_name: "Hero",
-        path: "/System/Library/Sounds/Hero.aiff",
-    },
 ];
+
+/// Typewriter sound for keystroke mode
+pub const TYPEWRITER_SOUND: &str = "sounds/typewriter-key.wav";
 
 /// Get the default sound (Swoosh)
 pub fn default_sound() -> &'static SystemSound {

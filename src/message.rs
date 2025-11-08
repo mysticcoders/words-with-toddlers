@@ -17,4 +17,6 @@ pub enum Message {
     NavigateToWelcome,
     /// Select a sound by name
     SelectSound(String),
+    /// Toggle typewriter mode
+    ToggleTypewriterMode(bool),
 }

@@ -6,12 +6,15 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub selected_sound: String,
+    #[serde(default)]
+    pub typewriter_mode: bool,
 }
 
 impl Default for AppConfig {
     fn default() -> Self {
         AppConfig {
             selected_sound: "Swoosh".to_string(),
+            typewriter_mode: false,
         }
     }
 }
