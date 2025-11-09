@@ -9,6 +9,10 @@ use crate::utils::color::hsl_to_rgb;
 use crate::dictionary::Dictionary;
 use crate::discovered_word::DiscoveredWord;
 use crate::session::Session;
+use crate::grade_level::GradeLevel;
+use crate::word_list_loader::WordListLoader;
+use crate::word_challenge::{WordChallenge, ChallengeMode};
+use crate::celebration::Celebration;
 
 /// Represents the different screens in the application
 #[derive(Debug, Clone, PartialEq)]
@@ -16,6 +20,7 @@ pub enum Screen {
     Welcome,
     Main,
     Settings,
+    WordChallenge,
 }
 
 /// Main application state for Words with Toddlers
@@ -31,6 +36,9 @@ pub struct WordsWithToddlers {
     current_screen: Screen,
     selected_sound: String,
     typewriter_mode: bool,
+    word_list_loader: WordListLoader,
+    word_challenge: Option<WordChallenge>,
+    celebration: Option<Celebration>,
 }
 
 impl WordsWithToddlers {
@@ -52,6 +60,9 @@ impl WordsWithToddlers {
                 current_screen: Screen::Welcome,
                 selected_sound: config.selected_sound,
                 typewriter_mode: config.typewriter_mode,
+                word_list_loader: WordListLoader::new(),
+                word_challenge: None,
+                celebration: None,
             },
             // Send a message after a short delay to set window to AlwaysOnTop
             Task::perform(
@@ -83,19 +94,123 @@ impl WordsWithToddlers {
             }
             Message::NavigateToWelcome => {
                 self.current_screen = Screen::Welcome;
+                self.word_challenge = None;
+                self.celebration = None;
+                Task::none()
+            }
+            Message::NavigateToMain => {
+                self.current_screen = Screen::Main;
+                Task::none()
+            }
+            Message::StartVisualChallenge => {
+                if let Some(words) = self.word_list_loader.get_words_for_grade(GradeLevel::PreK) {
+                    self.word_challenge = Some(WordChallenge::new(ChallengeMode::Visual, words.clone()));
+                    self.current_screen = Screen::WordChallenge;
+                }
+                Task::none()
+            }
+            Message::StartAudioChallenge => {
+                if let Some(words) = self.word_list_loader.get_words_for_grade(GradeLevel::PreK) {
+                    self.word_challenge = Some(WordChallenge::new(ChallengeMode::Audio, words.clone()));
+                    self.current_screen = Screen::WordChallenge;
+
+                    // Speak the first word
+                    if let Some(ref challenge) = self.word_challenge {
+                        crate::speech::speak_word_async(challenge.current_word.clone());
+                    }
+                }
+                Task::none()
+            }
+            Message::ReplayWord => {
+                if let Some(ref challenge) = self.word_challenge {
+                    crate::speech::speak_word_async(challenge.current_word.clone());
+                }
+                Task::none()
+            }
+            Message::CheckTypedWord => {
+                if let Some(ref mut challenge) = self.word_challenge {
+                    if challenge.check_if_correct() {
+                        challenge.handle_correct_word();
+                        self.celebration = Some(Celebration::new());
+
+                        // Play success sound with fresh flag
+                        self.sound_playing.store(false, std::sync::atomic::Ordering::Relaxed);
+                        let sound_path = crate::system_sound::get_sound_path(&self.selected_sound);
+                        crate::audio::play_sound(self.sound_playing.clone(), sound_path.to_string());
+
+                        // Schedule celebration finish
+                        return Task::perform(
+                            async {
+                                tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+                            },
+                            |_| Message::FinishCelebration
+                        );
+                    } else {
+                        challenge.handle_incorrect_word();
+                    }
+                }
+                Task::none()
+            }
+            Message::FinishCelebration => {
+                if let Some(ref mut challenge) = self.word_challenge {
+                    // Check if we should level up or down
+                    if challenge.should_level_up() {
+                        if let Some(new_level) = challenge.level_up() {
+                            if let Some(words) = self.word_list_loader.get_words_for_grade(new_level) {
+                                challenge.update_word_list(words.clone());
+                            }
+                        }
+                        // Still need to clear celebration state
+                        challenge.is_celebrating = false;
+                    } else if challenge.should_level_down() {
+                        if let Some(new_level) = challenge.level_down() {
+                            if let Some(words) = self.word_list_loader.get_words_for_grade(new_level) {
+                                challenge.update_word_list(words.clone());
+                            }
+                        }
+                        // Still need to clear celebration state
+                        challenge.is_celebrating = false;
+                    } else {
+                        challenge.finish_celebration();
+                    }
+
+                    // Speak the new word if in audio mode
+                    if challenge.mode == ChallengeMode::Audio {
+                        crate::speech::speak_word_async(challenge.current_word.clone());
+                    }
+                }
+                self.celebration = None;
+                Task::none()
+            }
+            Message::ExitChallenge => {
+                // Save challenge session
+                if let Some(ref challenge) = self.word_challenge {
+                    let session = Session::new_challenge(
+                        challenge.grade_level,
+                        challenge.score,
+                        challenge.words_completed,
+                    );
+                    if let Err(e) = session.save() {
+                        eprintln!("Failed to save challenge session: {}", e);
+                    }
+                }
+                self.word_challenge = None;
+                self.celebration = None;
+                self.current_screen = Screen::Welcome;
                 Task::none()
             }
             Message::SelectSound(sound_name) => {
                 self.selected_sound = sound_name.clone();
-                
+
                 // Play the newly selected sound
                 let sound_path = crate::system_sound::get_sound_path(&sound_name);
                 crate::audio::play_sound(self.sound_playing.clone(), sound_path.to_string());
-                
+
                 // Save configuration
                 let config = crate::config::AppConfig {
                     selected_sound: sound_name,
                     typewriter_mode: self.typewriter_mode,
+                    last_selected_grade: GradeLevel::default(),
                 };
                 if let Err(e) = crate::config::save_config(&config) {
                     eprintln!("Failed to save config: {}", e);
@@ -104,11 +219,12 @@ impl WordsWithToddlers {
             }
             Message::ToggleTypewriterMode(enabled) => {
                 self.typewriter_mode = enabled;
-                
+
                 // Save configuration
                 let config = crate::config::AppConfig {
                     selected_sound: self.selected_sound.clone(),
                     typewriter_mode: enabled,
+                    last_selected_grade: GradeLevel::default(),
                 };
                 if let Err(e) = crate::config::save_config(&config) {
                     eprintln!("Failed to save config: {}", e);
@@ -124,6 +240,7 @@ impl WordsWithToddlers {
         match self.current_screen {
             Screen::Welcome => self.build_welcome_screen(),
             Screen::Settings => self.build_settings_screen(),
+            Screen::WordChallenge => self.build_word_challenge_screen(),
             Screen::Main => {
                 let mut main_column = column![]
                     .spacing(20)
@@ -181,6 +298,11 @@ impl WordsWithToddlers {
 
     /// Handles keyboard input
     fn handle_key_press(&mut self, key: keyboard::Key) -> Task<Message> {
+        // Handle challenge mode separately
+        if self.current_screen == Screen::WordChallenge {
+            return self.handle_challenge_key_press(key);
+        }
+
         match key {
             keyboard::Key::Named(keyboard::key::Named::Escape) => {
                 return exit();
@@ -351,9 +473,47 @@ impl WordsWithToddlers {
             );
         }
         
-        let instructions = text("Type as much as you want! Press Space to save words!\nPress Enter to clear all • Escape to exit")
+        let instructions = text("Type any letter to start Discovery Mode!\nPress Space to save words • Enter to clear all • Escape to exit")
             .size(30)
             .color(Color::from_rgb(0.6, 0.6, 0.6));
+
+        // Visual challenge button
+        let visual_button = button(
+            text("👁️ See Words")
+                .size(30)
+        )
+        .padding(20)
+        .style(|_theme: &Theme, _status| button::Style {
+            background: Some(iced::Background::Color(Color::from_rgb(0.2, 0.6, 0.9))),
+            border: iced::Border {
+                color: Color::from_rgb(0.4, 0.8, 1.0),
+                width: 2.0,
+                radius: 10.0.into(),
+            },
+            ..Default::default()
+        })
+        .on_press(Message::StartVisualChallenge);
+
+        // Audio challenge button
+        let audio_button = button(
+            text("🔊 Hear Words")
+                .size(30)
+        )
+        .padding(20)
+        .style(|_theme: &Theme, _status| button::Style {
+            background: Some(iced::Background::Color(Color::from_rgb(0.6, 0.2, 0.9))),
+            border: iced::Border {
+                color: Color::from_rgb(0.8, 0.4, 1.0),
+                width: 2.0,
+                radius: 10.0.into(),
+            },
+            ..Default::default()
+        })
+        .on_press(Message::StartAudioChallenge);
+
+        let challenge_row = row![visual_button, audio_button]
+            .spacing(20)
+            .align_y(alignment::Vertical::Center);
 
         // Settings button
         let settings_button = button(
@@ -373,7 +533,7 @@ impl WordsWithToddlers {
         .on_press(Message::NavigateToSettings);
 
         container(
-            column![welcome_row, instructions, settings_button]
+            column![welcome_row, instructions, challenge_row, settings_button]
                 .spacing(30)
                 .align_x(alignment::Horizontal::Center),
         )
@@ -644,5 +804,193 @@ impl WordsWithToddlers {
         let hue = rng.gen_range(0.0..360.0);
         let (r, g, b) = hsl_to_rgb(hue, 0.8, 0.6);
         Color::from_rgb(r, g, b)
+    }
+
+    /// Builds the word challenge screen
+    fn build_word_challenge_screen(&self) -> Element<Message> {
+        if let Some(ref challenge) = self.word_challenge {
+            let mut content_column = column![]
+                .spacing(40)
+                .align_x(alignment::Horizontal::Center);
+
+            // Score and difficulty display
+            let header_row = row![
+                text(format!("Score: {}", challenge.score))
+                    .size(40)
+                    .color(Color::from_rgb(1.0, 0.8, 0.2)),
+                text(format!("Level: {}", challenge.grade_level.display_name()))
+                    .size(40)
+                    .color(Color::from_rgb(0.5, 1.0, 0.8)),
+            ]
+            .spacing(60)
+            .align_y(alignment::Vertical::Center);
+
+            content_column = content_column.push(header_row);
+
+            // Target word display
+            let target_word_color = if challenge.is_celebrating {
+                Color::from_rgb(0.2, 1.0, 0.3)
+            } else {
+                Color::from_rgb(0.9, 0.9, 1.0)
+            };
+
+            let target_size = if challenge.is_celebrating {
+                if let Some(ref celebration) = self.celebration {
+                    (150.0 * celebration.scale_factor()) as u16
+                } else {
+                    150
+                }
+            } else {
+                150
+            };
+
+            let target_word = text(&challenge.current_word)
+                .size(target_size)
+                .color(target_word_color);
+
+            // Show target word in visual mode OR in audio mode after 3 wrong attempts
+            if challenge.mode == ChallengeMode::Visual || challenge.should_reveal_word() {
+                if challenge.should_reveal_word() {
+                    // Show hint text in audio mode when revealing
+                    let hint_text = text("Here's the word to help you:")
+                        .size(30)
+                        .color(Color::from_rgb(1.0, 0.7, 0.3));
+                    content_column = content_column.push(hint_text);
+                }
+                content_column = content_column.push(target_word);
+            } else {
+                // In audio mode, show replay button
+                let replay_button = button(
+                    text("🔊 Replay Word")
+                        .size(50)
+                )
+                .padding(30)
+                .style(|_theme: &Theme, _status| button::Style {
+                    background: Some(iced::Background::Color(Color::from_rgb(0.6, 0.2, 0.9))),
+                    border: iced::Border {
+                        color: Color::from_rgb(0.8, 0.4, 1.0),
+                        width: 2.0,
+                        radius: 15.0.into(),
+                    },
+                    ..Default::default()
+                })
+                .on_press(Message::ReplayWord);
+
+                content_column = content_column.push(replay_button);
+            }
+
+            // Typed letters display
+            if !challenge.is_celebrating {
+                let mut typed_row = row![]
+                    .spacing(5)
+                    .align_y(alignment::Vertical::Center);
+
+                for letter in &challenge.typed_letters {
+                    typed_row = typed_row.push(
+                        text(letter.character.to_string())
+                            .size(100)
+                            .color(letter.color),
+                    );
+                }
+
+                // Add cursor
+                let cursor_color = if self.cursor_visible {
+                    Color::from_rgb(1.0, 1.0, 1.0)
+                } else {
+                    Color::from_rgba(1.0, 1.0, 1.0, 0.0)
+                };
+                typed_row = typed_row.push(
+                    text("|")
+                        .size(100)
+                        .color(cursor_color),
+                );
+
+                content_column = content_column.push(typed_row);
+            } else if let Some(ref celebration) = self.celebration {
+                let celebration_text = text("✓ Correct!")
+                    .size(80)
+                    .color(Color::from_rgba(0.2, 1.0, 0.3, celebration.opacity()));
+
+                content_column = content_column.push(celebration_text);
+            }
+
+            // Instructions
+            let instructions = if challenge.mode == ChallengeMode::Visual {
+                text("Type the word shown above\nPress ESC to exit")
+                    .size(25)
+                    .color(Color::from_rgb(0.5, 0.5, 0.6))
+            } else {
+                text("Type the word you hear\nPress 🔊 to replay • Press ESC to exit")
+                    .size(25)
+                    .color(Color::from_rgb(0.5, 0.5, 0.6))
+            };
+
+            content_column = content_column.push(instructions);
+
+            container(content_column)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .align_x(alignment::Horizontal::Center)
+                .align_y(alignment::Vertical::Center)
+                .style(|_theme: &Theme| container::Style {
+                    background: Some(iced::Background::Color(Color::from_rgb(0.05, 0.05, 0.1))),
+                    ..Default::default()
+                })
+                .into()
+        } else {
+            // Fallback if no challenge exists
+            self.build_welcome_screen()
+        }
+    }
+
+    /// Handles keyboard input in challenge mode
+    fn handle_challenge_key_press(&mut self, key: keyboard::Key) -> Task<Message> {
+        // Check if celebrating first
+        if let Some(ref challenge) = self.word_challenge {
+            if challenge.is_celebrating {
+                return Task::none();
+            }
+        }
+
+        match key {
+            keyboard::Key::Named(keyboard::key::Named::Escape) => {
+                return Task::done(Message::ExitChallenge);
+            }
+            keyboard::Key::Named(keyboard::key::Named::Backspace) => {
+                if let Some(ref mut challenge) = self.word_challenge {
+                    challenge.remove_last_letter();
+                }
+                if self.typewriter_mode {
+                    crate::audio::play_sound(self.sound_playing.clone(), crate::system_sound::TYPEWRITER_SOUND.to_string());
+                }
+            }
+            keyboard::Key::Named(keyboard::key::Named::Enter) | keyboard::Key::Named(keyboard::key::Named::Space) => {
+                return Task::done(Message::CheckTypedWord);
+            }
+            keyboard::Key::Character(s) => {
+                if let Some(c) = s.chars().next() {
+                    if c.is_alphabetic() {
+                        let character = c.to_uppercase().next().unwrap();
+                        let color = self.random_color();
+                        let should_play_sound = self.typewriter_mode;
+
+                        if let Some(ref mut challenge) = self.word_challenge {
+                            challenge.add_letter(Letter::new(character, color));
+
+                            if should_play_sound {
+                                crate::audio::play_sound(self.sound_playing.clone(), crate::system_sound::TYPEWRITER_SOUND.to_string());
+                            }
+
+                            // Auto-check if word length matches
+                            if challenge.typed_text().len() == challenge.current_word.len() {
+                                return Task::done(Message::CheckTypedWord);
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+        Task::none()
     }
 }

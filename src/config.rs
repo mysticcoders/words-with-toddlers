@@ -1,3 +1,4 @@
+use crate::grade_level::GradeLevel;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -8,6 +9,8 @@ pub struct AppConfig {
     pub selected_sound: String,
     #[serde(default)]
     pub typewriter_mode: bool,
+    #[serde(default)]
+    pub last_selected_grade: GradeLevel,
 }
 
 impl Default for AppConfig {
@@ -15,6 +18,7 @@ impl Default for AppConfig {
         AppConfig {
             selected_sound: "Swoosh".to_string(),
             typewriter_mode: false,
+            last_selected_grade: GradeLevel::default(),
         }
     }
 }

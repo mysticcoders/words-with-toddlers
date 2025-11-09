@@ -1,8 +1,15 @@
+use crate::grade_level::GradeLevel;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 use chrono::Local;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum GameMode {
+    Discovery,
+    Challenge,
+}
 
 /// Represents a typing session that gets saved to disk
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -11,6 +18,12 @@ pub struct Session {
     pub typed_text: String,
     pub discovered_words: Vec<String>,
     pub duration_seconds: Option<u64>,
+    #[serde(default)]
+    pub game_mode: Option<GameMode>,
+    #[serde(default)]
+    pub grade_level: Option<GradeLevel>,
+    #[serde(default)]
+    pub score: Option<usize>,
 }
 
 impl Session {
@@ -21,6 +34,22 @@ impl Session {
             typed_text,
             discovered_words,
             duration_seconds: None,
+            game_mode: Some(GameMode::Discovery),
+            grade_level: None,
+            score: None,
+        }
+    }
+
+    /// Creates a new challenge mode session
+    pub fn new_challenge(grade_level: GradeLevel, score: usize, _words_completed: usize) -> Self {
+        Session {
+            timestamp: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+            typed_text: String::new(),
+            discovered_words: vec![],
+            duration_seconds: None,
+            game_mode: Some(GameMode::Challenge),
+            grade_level: Some(grade_level),
+            score: Some(score),
         }
     }
     

@@ -15,8 +15,22 @@ pub enum Message {
     NavigateToSettings,
     /// Navigate to welcome screen
     NavigateToWelcome,
+    /// Navigate to main (discovery mode) screen
+    NavigateToMain,
+    /// Start visual challenge mode
+    StartVisualChallenge,
+    /// Start audio challenge mode
+    StartAudioChallenge,
+    /// Replay the current word (audio mode)
+    ReplayWord,
     /// Select a sound by name
     SelectSound(String),
     /// Toggle typewriter mode
     ToggleTypewriterMode(bool),
+    /// Check if typed word is correct (challenge mode)
+    CheckTypedWord,
+    /// Finish celebration and load next word
+    FinishCelebration,
+    /// Exit challenge mode
+    ExitChallenge,
 }

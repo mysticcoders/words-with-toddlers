@@ -8,6 +8,11 @@ mod session;
 mod audio;
 mod system_sound;
 mod config;
+mod grade_level;
+mod word_list_loader;
+mod word_challenge;
+mod celebration;
+mod speech;
 
 use app::WordsWithToddlers;
 use iced::{window, Size};
