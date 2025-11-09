@@ -1,0 +1,189 @@
+openapi: 3.0.3
+info:
+  title: Words with Toddlers API
+  description: API for the Words with Toddlers application, providing word lists, user progress tracking, and session management
+  version: 1.0.0
+servers:
+  - url: https://api.wordswithtoddlers.com/v1
+    description: Production server
+  - url: http://localhost:8080/v1
+    description: Development server
+
+paths:
+  /words/{gradeLevel}:
+    get:
+      summary: Get word list for grade level
+      description: Returns the list of words for a specific grade level
+      parameters:
+        - name: gradeLevel
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - PreK
+              - Kindergarten
+              - First
+              - Second
+              - Third
+              - Fourth
+              - Fifth
+              - Sixth
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gradeLevel:
+                    type: string
+                  words:
+                    type: array
+                    items:
+                      type: string
+                  count:
+                    type: integer
+        '404':
+          description: Grade level not found
+
+  /sessions:
+    post:
+      summary: Create or update session
+      description: Save session data for a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Session'
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request
+
+  /sessions/{sessionId}:
+    get:
+      summary: Get session by ID
+      description: Retrieve session data
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '404':
+          description: Session not found
+
+  /users/{userId}/progress:
+    get:
+      summary: Get user progress
+      description: Retrieve progress data for a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProgress'
+        '404':
+          description: User not found
+
+components:
+  schemas:
+    Session:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+        gameMode:
+          type: string
+          enum:
+            - Discovery
+            - Challenge
+        challengeMode:
+          type: string
+          enum:
+            - Visual
+            - Audio
+        gradeLevel:
+          type: string
+          enum:
+            - PreK
+            - Kindergarten
+            - First
+            - Second
+            - Third
+            - Fourth
+            - Fifth
+            - Sixth
+        score:
+          type: integer
+        wordsCompleted:
+          type: integer
+        accuracy:
+          type: number
+          format: float
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+
+    UserProgress:
+      type: object
+      properties:
+        userId:
+          type: string
+        currentGradeLevel:
+          type: string
+        totalScore:
+          type: integer
+        totalWordsCompleted:
+          type: integer
+        averageAccuracy:
+          type: number
+          format: float
+        sessionsCount:
+          type: integer
+        lastSessionDate:
+          type: string
+          format: date-time
+        levelHistory:
+          type: array
+          items:
+            type: object
+            properties:
+              gradeLevel:
+                type: string
+              reachedAt:
+                type: string
+                format: date-time

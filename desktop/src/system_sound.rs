@@ -11,37 +11,37 @@ pub const SOUNDS: &[SystemSound] = &[
     SystemSound {
         name: "Swoosh",
         display_name: "Swoosh",
-        path: "sounds/Swoosh.wav",
+        path: "../shared/sounds/Swoosh.wav",
     },
     SystemSound {
         name: "Swish",
         display_name: "Swish",
-        path: "sounds/Swish.wav",
+        path: "../shared/sounds/Swish.wav",
     },
     SystemSound {
         name: "Tri-Tone",
         display_name: "Tri-Tone",
-        path: "sounds/Tri-Tone.wav",
+        path: "../shared/sounds/Tri-Tone.wav",
     },
     SystemSound {
         name: "Chime",
         display_name: "Chime",
-        path: "sounds/Chime.wav",
+        path: "../shared/sounds/Chime.wav",
     },
     SystemSound {
         name: "Bell",
         display_name: "Bell",
-        path: "sounds/Bell.wav",
+        path: "../shared/sounds/Bell.wav",
     },
     SystemSound {
         name: "Ding",
         display_name: "Ding",
-        path: "sounds/Ding.wav",
+        path: "../shared/sounds/Ding.wav",
     },
 ];
 
 /// Typewriter sound for keystroke mode
-pub const TYPEWRITER_SOUND: &str = "sounds/typewriter-key.wav";
+pub const TYPEWRITER_SOUND: &str = "../shared/sounds/typewriter-key.wav";
 
 /// Get the default sound (Swoosh)
 pub fn default_sound() -> &'static SystemSound {

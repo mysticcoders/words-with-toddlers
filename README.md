@@ -1,110 +1,219 @@
 # 🌈 <span style="color:#FF6B6B">W</span><span style="color:#4ECDC4">o</span><span style="color:#45B7D1">r</span><span style="color:#96CEB4">d</span><span style="color:#FFEAA7">s</span> <span style="color:#DDA0DD">W</span><span style="color:#98D8C8">i</span><span style="color:#F7DC6F">t</span><span style="color:#85C1E2">h</span> <span style="color:#F8B739">T</span><span style="color:#52B788">o</span><span style="color:#E76F51">d</span><span style="color:#A8DADC">d</span><span style="color:#F1FA8C">l</span><span style="color:#FFB6C1">e</span><span style="color:#87CEEB">r</span><span style="color:#DDA0DD">s</span><span style="color:#98FB98">!</span> 🎨
 
-A fun, colorful, and toddler-safe typing application built with Rust and Iced GUI framework. Perfect for introducing young children to letters and numbers on the keyboard!
+A fun, colorful, and toddler-safe typing application with adaptive learning capabilities. Available on Desktop (macOS, Windows, Linux) and iOS (iPad, iPhone)!
 
 ![Words with Toddlers Screenshot](screenshot.png)
 
 ## ✨ Features
 
+### Core Features
 - 🔤 **Large, Colorful Letters**: Each typed character appears in huge, randomly colored text
-- 🔢 **Letters & Numbers**: Supports both alphabetic characters and numbers 0-9
-- 🌈 **Rainbow Welcome Screen**: Engaging multicolored title to capture toddlers' attention
-- 📏 **Dynamic Sizing**: Text automatically resizes based on the number of characters (up to 25)
-- 🔒 **Toddler-Safe**:
-  - Escape key to exit (harder for toddlers to accidentally press)
-  - Window stays always-on-top
-  - Maximizable window for full immersion
-- 🧹 **Easy Clear**: Press Enter to clear all letters and start fresh
-- ⌫ **Backspace Support**: Remove the last typed character
+- 🎯 **Two Game Modes**:
+  - **Discovery Mode**: Free typing with colorful letters
+  - **Challenge Mode**: Grade-level word challenges with adaptive difficulty
+- 👁️ **Visual Challenge**: See the word and type it
+- 🔊 **Audio Challenge**: Hear the word spoken, then type it (with 3-strike reveal)
+- 📚 **Educational Word Lists**:
+  - Dolch word lists (220 words + 95 nouns)
+  - Fry word lists (1000 high-frequency words)
+  - Organized by grade level (Pre-K through 6th grade)
+- 🎓 **Adaptive Difficulty**: Automatically levels up/down based on performance
+  - Tracks last 10 attempts
+  - 80% accuracy → level up
+  - <50% accuracy → level down
+- 🎉 **Celebration Animations**: Reward correct answers
+- 🔒 **Toddler-Safe**: Escape key to exit, always-on-top window
+
+### Platform-Specific Features
+- **Desktop**: Text-to-speech via macOS `say` command, customizable sounds
+- **iOS**: Native AVSpeechSynthesizer, iPad split-screen support, iPhone portrait mode
+
+## 🏗️ Repository Structure
+
+```
+words-with-toddlers/
+├── desktop/              # Rust/Iced desktop implementation
+│   ├── Cargo.toml
+│   └── src/
+│       ├── main.rs
+│       ├── app.rs
+│       ├── models/
+│       ├── views/
+│       └── services/
+├── ios/                  # Swift/SwiftUI iOS implementation
+│   └── WordsWithToddlers/
+│       ├── Models/
+│       ├── Views/
+│       └── Services/
+├── shared/               # Shared resources
+│   ├── word_lists/       # Dolch & Fry word lists (.txt)
+│   └── sounds/           # Audio files (.wav)
+├── api/                  # Future API server
+│   └── spec/
+│       └── openapi.yaml  # API specification
+└── README.md
+```
 
 ## 🚀 Installation
 
-### Prerequisites
-- Rust (1.70 or later)
+### Desktop (Rust/Iced)
+
+#### Prerequisites
+- Rust 1.70 or later
 - Cargo
 
-### Build from Source
-
+#### Build and Run
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/words-with-toddlers.git
-cd words-with-toddlers
+# Navigate to desktop directory
+cd desktop
 
-# Build in release mode for best performance
+# Build in release mode
 cargo build --release
 
 # Run the application
 cargo run --release
 ```
 
-## 🎮 Usage
+#### Desktop Usage
+1. Launch the app: `cargo run --release` from `desktop/` directory
+2. Choose a mode:
+   - Click "👁️ See Words" for visual challenge
+   - Click "🔊 Hear Words" for audio challenge
+   - Type any letter to start Discovery mode
+3. In Challenge mode:
+   - Type the displayed/spoken word
+   - Score increases with correct answers
+   - Automatic difficulty adjustment
+4. Press Escape to exit
 
-1. **Launch the app**: Run `cargo run --release`
-2. **Type letters or numbers**: They appear in large, colorful text
-3. **Press Enter**: Clear all text
-4. **Press Backspace**: Remove last character
-5. **Press Escape**: Exit the application
+### iOS (Swift/SwiftUI)
 
-### Text Size Scaling
-The app intelligently scales text size based on character count:
-- 1-3 characters: Huge (300px)
-- 4-6 characters: Very Large (200px)
-- 7-10 characters: Large (150px)
-- 11-15 characters: Medium (100px)
-- 16-20 characters: Small (80px)
-- 21-25 characters: Compact (60px)
+#### Prerequisites
+- macOS with Xcode 15 or later
+- iOS 17+ for deployment
 
-## 🔐 Toddler Safety Tips
+#### Setup
+```bash
+# The word lists and sounds need to be added to the Xcode project
+# 1. Open Xcode
+# 2. Create new iOS App project in ios/WordsWithToddlers/
+# 3. Add all Swift files from ios/WordsWithToddlers/WordsWithToddlers/
+# 4. Add word lists from shared/word_lists/ to Resources
+# 5. Add sounds from shared/sounds/ to Resources
+```
+
+#### Manual Xcode Project Creation
+1. Open Xcode
+2. File → New → Project
+3. Select "iOS" → "App"
+4. Product Name: "WordsWithToddlers"
+5. Interface: SwiftUI
+6. Language: Swift
+7. Save in `ios/` directory
+8. Add all `.swift` files from the following directories:
+   - `ios/WordsWithToddlers/WordsWithToddlers/Models/`
+   - `ios/WordsWithToddlers/WordsWithToddlers/Views/`
+   - `ios/WordsWithToddlers/WordsWithToddlers/Services/`
+9. Add `shared/word_lists/*.txt` to project (Copy items if needed)
+10. Add `shared/sounds/*.wav` to project (Copy items if needed)
+11. Build and run on simulator or device
+
+#### iOS Usage
+1. Launch app on iPhone or iPad
+2. Choose mode:
+   - "👁️ See Words" - Visual word challenge
+   - "🔊 Hear Words" - Audio word challenge
+3. Type using on-screen keyboard
+4. Score and level displayed at top
+5. Automatic progression through grade levels
+
+## 🎓 Adaptive Learning System
+
+The challenge mode features an intelligent difficulty system:
+
+- **Initial Level**: Pre-K (40 simple words)
+- **Performance Tracking**: Last 10 word attempts
+- **Level Up**: ≥80% accuracy over 10 attempts → advance to next grade
+- **Level Down**: <50% accuracy over 10 attempts → return to previous grade
+- **Grade Progression**: Pre-K → K → 1st → 2nd → 3rd → 4th → 5th → 6th
+
+### Audio Mode Safety Net
+When in audio mode, if a child gets the same word wrong 3 times, the word is revealed to help them progress.
+
+## 📚 Word Lists
+
+### Dolch Lists
+- **Pre-Primer**: 40 words (Pre-K)
+- **Primer**: 52 words (Kindergarten)
+- **First**: 41 words
+- **Second**: 46 words
+- **Third**: 41 words
+- **Nouns**: 95 words
+
+### Fry Lists
+- **1-100**: Combined with Dolch First (1st grade)
+- **101-200**: Combined with Dolch Second (2nd grade)
+- **201-300**: Combined with Dolch Third (3rd grade)
+- **301-400**: 4th grade
+- **401-600**: 5th grade
+- **601-1000**: 6th grade
+
+## 🔐 Safety Features
+
+### Desktop Toddler Safety
+- Escape key to exit (harder for toddlers to find)
+- Window stays always-on-top
+- No external links or dangerous actions
 
 ### macOS Guided Access (Recommended)
-For the safest toddler experience on macOS:
-
 1. Go to **System Settings → Accessibility → Guided Access**
 2. Enable Guided Access and set a passcode
 3. Launch Words with Toddlers
-4. Triple-click the Touch ID/power button to activate Guided Access
-5. The Mac is now locked to just this app until you triple-click and enter the passcode
+4. Triple-click Touch ID/power button to activate
+5. Mac is locked to just this app until you unlock
 
-### Additional Safety Features
-- Window stays **always-on-top** to prevent accidental app switching
-- Only **Escape** key exits (harder for toddlers to find)
-- No external links or dangerous actions
-
-## 🏗️ Project Structure
-
-```
-words-with-toddlers/
-├── src/
-│   ├── main.rs          # Application entry point
-│   ├── app.rs           # Main application logic
-│   ├── letter.rs        # Letter struct definition
-│   ├── message.rs       # Message handling
-│   └── utils/
-│       ├── mod.rs       # Utils module
-│       └── color.rs     # Color conversion utilities
-├── Cargo.toml           # Dependencies
-└── README.md            # This file
-```
+### iOS Guided Access
+1. Go to **Settings → Accessibility → Guided Access**
+2. Enable Guided Access and set a passcode
+3. Launch Words with Toddlers
+4. Triple-click Home/Side button to activate
+5. Device is locked to just this app until you unlock
 
 ## 🛠️ Technical Details
 
-### Built With
-- **[Rust](https://www.rust-lang.org/)** - Systems programming language
-- **[Iced](https://github.com/iced-rs/iced)** - Cross-platform GUI library
-- **[rand](https://crates.io/crates/rand)** - Random number generation for colors
+### Desktop Stack
+- **Language**: Rust
+- **GUI Framework**: Iced 0.13
+- **Audio**: rodio
+- **Text-to-Speech**: macOS `say` command
+- **Architecture**: Elm-style message passing
 
-### Architecture
-The application follows a clean, modular architecture:
-- **Separation of Concerns**: Each module handles a specific responsibility
-- **Event-Driven**: Uses Iced's Elm-inspired architecture
-- **Type Safety**: Leverages Rust's type system for reliability
+### iOS Stack
+- **Language**: Swift
+- **UI Framework**: SwiftUI
+- **Audio**: AVAudioPlayer
+- **Text-to-Speech**: AVSpeechSynthesizer
+- **Architecture**: MVVM with ObservableObject
 
-## 🎨 Color Generation
+### Shared Data Models
+Both platforms implement identical models:
+- `GradeLevel`: 8 grade levels with progression logic
+- `WordChallenge`: Adaptive difficulty tracking
+- `Letter`: Character with random color
+- `ChallengeMode`: Visual or Audio
 
-Each letter gets a unique random color using HSL to RGB conversion:
-- **Hue**: Random value between 0-360°
-- **Saturation**: 80% for vibrant colors
-- **Lightness**: 60% for good visibility on dark background
+## 🌐 Future API Server
+
+An API specification is defined in `api/spec/openapi.yaml` for future cloud features:
+- User accounts and progress tracking
+- Cross-device session sync
+- Leaderboards
+- Dynamic word list updates
+
+Endpoints (planned):
+- `GET /words/{gradeLevel}` - Fetch word lists
+- `POST /sessions` - Save session data
+- `GET /users/{userId}/progress` - Sync progress
 
 ## 📝 License
 
@@ -115,22 +224,24 @@ This project is open source and available under the MIT License.
 Contributions are welcome! Feel free to:
 - Report bugs
 - Suggest new features
-- Submit pull requests
+- Submit pull requests for desktop or iOS
 
 ## 👶 Perfect For
 
-- Teaching toddlers letter recognition
-- Number familiarity
-- Keyboard awareness
-- Color recognition
-- Cause-and-effect learning
-- Safe computer interaction
+- Teaching letter recognition
+- Grade-level sight word practice
+- Adaptive learning based on child's skill
+- Audio/visual learning styles
+- Building typing confidence
+- Color and sound recognition
 
 ## 🙏 Acknowledgments
 
 - Iced GUI framework developers
-- Rust community
-- Parents everywhere dealing with curious toddlers!
+- SwiftUI community
+- Dolch and Fry word list creators
+- Rust and Swift communities
+- Parents everywhere teaching their toddlers!
 
 ---
 
