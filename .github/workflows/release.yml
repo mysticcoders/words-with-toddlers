@@ -49,17 +49,20 @@ jobs:
       
       - name: Build Release Binary
         run: cargo build --release --target ${{ matrix.target }}
-      
+        working-directory: desktop
+
       - name: Prepare Binary (Windows)
         if: runner.os == 'Windows'
+        working-directory: desktop
         run: |
-          mv target/${{ matrix.target }}/release/words-with-toddlers.exe ${{ matrix.name }}
-      
+          mv target/${{ matrix.target }}/release/words-with-toddlers.exe ../${{ matrix.name }}
+
       - name: Prepare Binary (Unix)
         if: runner.os != 'Windows'
+        working-directory: desktop
         run: |
-          mv target/${{ matrix.target }}/release/words-with-toddlers ${{ matrix.name }}
-          chmod +x ${{ matrix.name }}
+          mv target/${{ matrix.target }}/release/words-with-toddlers ../${{ matrix.name }}
+          chmod +x ../${{ matrix.name }}
       
       - name: Create Archive (Windows)
         if: runner.os == 'Windows'
