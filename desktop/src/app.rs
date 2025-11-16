@@ -279,7 +279,7 @@ impl WordsWithToddlers {
     }
 
     /// Builds the user interface
-    pub fn view(&self) -> Element<Message> {
+    pub fn view(&self) -> Element<'_, Message> {
         // Route to different screens based on current_screen
         match self.current_screen {
             Screen::Welcome => self.build_welcome_screen(),
@@ -490,7 +490,7 @@ impl WordsWithToddlers {
     }
 
     /// Builds the placeholder screen shown after typing has started
-    fn build_placeholder_screen(&self) -> Element<Message> {
+    fn build_placeholder_screen(&self) -> Element<'_, Message> {
         let placeholder_text = text("Ready for more words...")
             .size(60)
             .color(Color::from_rgb(0.4, 0.4, 0.45));
@@ -504,7 +504,7 @@ impl WordsWithToddlers {
     }
 
     /// Builds the welcome screen with multicolored title
-    fn build_welcome_screen(&self) -> Element<Message> {
+    fn build_welcome_screen(&self) -> Element<'_, Message> {
         let welcome_text = "Welcome to Words With Toddlers!";
         let mut welcome_row = row![].spacing(5).align_y(alignment::Vertical::Center);
 
@@ -601,7 +601,7 @@ impl WordsWithToddlers {
     }
 
     /// Builds the settings screen for sound selection
-    fn build_settings_screen(&self) -> Element<Message> {
+    fn build_settings_screen(&self) -> Element<'_, Message> {
         let title = text("Settings")
             .size(60)
             .color(Color::from_rgb(0.9, 0.9, 1.0));
@@ -743,7 +743,7 @@ impl WordsWithToddlers {
     }
 
     /// Builds the display for discovered words with wrapping
-    fn build_discovered_words_display(&self) -> Element<Message> {
+    fn build_discovered_words_display(&self) -> Element<'_, Message> {
         // Create a column to hold multiple rows of words
         let mut words_column = column![].spacing(10).align_x(alignment::Horizontal::Center);
 
@@ -805,7 +805,7 @@ impl WordsWithToddlers {
     }
 
     /// Builds the display for typed letters with word wrapping
-    fn build_letters_display(&self) -> Element<Message> {
+    fn build_letters_display(&self) -> Element<'_, Message> {
         // Fixed letter size for consistency
         let letter_size = 120;
 
@@ -874,7 +874,7 @@ impl WordsWithToddlers {
     }
 
     /// Builds the word challenge screen
-    fn build_word_challenge_screen(&self) -> Element<Message> {
+    fn build_word_challenge_screen(&self) -> Element<'_, Message> {
         if let Some(ref challenge) = self.word_challenge {
             let mut content_column = column![].spacing(40).align_x(alignment::Horizontal::Center);
 
@@ -1008,7 +1008,7 @@ impl WordsWithToddlers {
     }
 
     /// Builds the tic-tac-toe game screen
-    fn build_tic_tac_toe_screen(&self) -> Element<Message> {
+    fn build_tic_tac_toe_screen(&self) -> Element<'_, Message> {
         if let Some(ref game) = self.tic_tac_toe {
             let title = text("Tic Tac Toe")
                 .size(60)
