@@ -2,7 +2,7 @@ use crate::grade_level::GradeLevel;
 use crate::letter::Letter;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use std::collections::VecDeque;
+use std::collections::{VecDeque, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChallengeMode {
@@ -23,6 +23,7 @@ pub struct WordChallenge {
     recent_attempts: VecDeque<bool>,
     attempts_since_level_change: usize,
     current_word_wrong_attempts: usize,
+    completed_words: HashSet<String>,
 }
 
 impl WordChallenge {
@@ -39,6 +40,7 @@ impl WordChallenge {
             recent_attempts: VecDeque::with_capacity(10),
             attempts_since_level_change: 0,
             current_word_wrong_attempts: 0,
+            completed_words: HashSet::new(),
         };
         challenge.next_word();
         challenge
@@ -47,8 +49,23 @@ impl WordChallenge {
     pub fn next_word(&mut self) {
         if !self.available_words.is_empty() {
             let mut rng = thread_rng();
-            if let Some(word) = self.available_words.choose(&mut rng) {
-                self.current_word = word.clone();
+
+            // Filter out completed words
+            let remaining_words: Vec<&String> = self.available_words
+                .iter()
+                .filter(|w| !self.completed_words.contains(*w))
+                .collect();
+
+            // If all words completed, clear the completed set to restart
+            if remaining_words.is_empty() {
+                self.completed_words.clear();
+                if let Some(word) = self.available_words.choose(&mut rng) {
+                    self.current_word = word.clone();
+                }
+            } else {
+                if let Some(word) = remaining_words.choose(&mut rng) {
+                    self.current_word = (*word).clone();
+                }
             }
         }
         self.typed_letters.clear();
@@ -72,6 +89,9 @@ impl WordChallenge {
         self.words_completed += 1;
         self.is_celebrating = true;
         self.record_attempt(true);
+
+        // Add to completed words so it won't repeat in this session
+        self.completed_words.insert(self.current_word.clone());
     }
 
     pub fn handle_incorrect_word(&mut self) {

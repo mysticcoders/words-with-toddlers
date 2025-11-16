@@ -13,6 +13,7 @@ use crate::grade_level::GradeLevel;
 use crate::word_list_loader::WordListLoader;
 use crate::word_challenge::{WordChallenge, ChallengeMode};
 use crate::celebration::Celebration;
+use crate::tic_tac_toe::TicTacToe;
 
 /// Represents the different screens in the application
 #[derive(Debug, Clone, PartialEq)]
@@ -21,6 +22,7 @@ pub enum Screen {
     Main,
     Settings,
     WordChallenge,
+    TicTacToe,
 }
 
 /// Main application state for Words with Toddlers
@@ -35,10 +37,11 @@ pub struct WordsWithToddlers {
     sound_playing: Arc<AtomicBool>,
     current_screen: Screen,
     selected_sound: String,
-    typewriter_mode: bool,
+    use_uppercase: bool,
     word_list_loader: WordListLoader,
     word_challenge: Option<WordChallenge>,
     celebration: Option<Celebration>,
+    tic_tac_toe: Option<TicTacToe>,
 }
 
 impl WordsWithToddlers {
@@ -59,10 +62,11 @@ impl WordsWithToddlers {
                 sound_playing: Arc::new(AtomicBool::new(false)),
                 current_screen: Screen::Welcome,
                 selected_sound: config.selected_sound,
-                typewriter_mode: config.typewriter_mode,
+                use_uppercase: config.use_uppercase,
                 word_list_loader: WordListLoader::new(),
                 word_challenge: None,
                 celebration: None,
+                tic_tac_toe: None,
             },
             // Send a message after a short delay to set window to AlwaysOnTop
             Task::perform(
@@ -106,6 +110,11 @@ impl WordsWithToddlers {
                 if let Some(words) = self.word_list_loader.get_words_for_grade(GradeLevel::PreK) {
                     self.word_challenge = Some(WordChallenge::new(ChallengeMode::Visual, words.clone()));
                     self.current_screen = Screen::WordChallenge;
+
+                    // Speak the first word
+                    if let Some(ref challenge) = self.word_challenge {
+                        crate::speech::speak_word_async(challenge.current_word.clone());
+                    }
                 }
                 Task::none()
             }
@@ -174,10 +183,8 @@ impl WordsWithToddlers {
                         challenge.finish_celebration();
                     }
 
-                    // Speak the new word if in audio mode
-                    if challenge.mode == ChallengeMode::Audio {
-                        crate::speech::speak_word_async(challenge.current_word.clone());
-                    }
+                    // Speak the new word for both visual and audio modes
+                    crate::speech::speak_word_async(challenge.current_word.clone());
                 }
                 self.celebration = None;
                 Task::none()
@@ -209,26 +216,50 @@ impl WordsWithToddlers {
                 // Save configuration
                 let config = crate::config::AppConfig {
                     selected_sound: sound_name,
-                    typewriter_mode: self.typewriter_mode,
                     last_selected_grade: GradeLevel::default(),
+                    use_uppercase: self.use_uppercase,
                 };
                 if let Err(e) = crate::config::save_config(&config) {
                     eprintln!("Failed to save config: {}", e);
                 }
                 Task::none()
             }
-            Message::ToggleTypewriterMode(enabled) => {
-                self.typewriter_mode = enabled;
+
+            Message::ToggleUppercase(value) => {
+                self.use_uppercase = value;
 
                 // Save configuration
                 let config = crate::config::AppConfig {
                     selected_sound: self.selected_sound.clone(),
-                    typewriter_mode: enabled,
                     last_selected_grade: GradeLevel::default(),
+                    use_uppercase: value,
                 };
                 if let Err(e) = crate::config::save_config(&config) {
                     eprintln!("Failed to save config: {}", e);
                 }
+                Task::none()
+            }
+
+            Message::StartTicTacToe => {
+                self.tic_tac_toe = Some(TicTacToe::new());
+                self.current_screen = Screen::TicTacToe;
+                Task::none()
+            }
+            Message::TicTacToeMove(position) => {
+                if let Some(ref mut game) = self.tic_tac_toe {
+                    game.make_move(position);
+                }
+                Task::none()
+            }
+            Message::ResetTicTacToe => {
+                if let Some(ref mut game) = self.tic_tac_toe {
+                    game.reset();
+                }
+                Task::none()
+            }
+            Message::ExitTicTacToe => {
+                self.tic_tac_toe = None;
+                self.current_screen = Screen::Welcome;
                 Task::none()
             }
         }
@@ -241,6 +272,7 @@ impl WordsWithToddlers {
             Screen::Welcome => self.build_welcome_screen(),
             Screen::Settings => self.build_settings_screen(),
             Screen::WordChallenge => self.build_word_challenge_screen(),
+            Screen::TicTacToe => self.build_tic_tac_toe_screen(),
             Screen::Main => {
                 let mut main_column = column![]
                     .spacing(20)
@@ -303,6 +335,11 @@ impl WordsWithToddlers {
             return self.handle_challenge_key_press(key);
         }
 
+        // Handle tic-tac-toe separately
+        if self.current_screen == Screen::TicTacToe {
+            return self.handle_tictactoe_key_press(key);
+        }
+
         match key {
             keyboard::Key::Named(keyboard::key::Named::Escape) => {
                 return exit();
@@ -344,27 +381,15 @@ impl WordsWithToddlers {
             }
             keyboard::Key::Named(keyboard::key::Named::Backspace) => {
                 self.letters.pop();
-                // Play typewriter sound if enabled
-                if self.typewriter_mode {
-                    crate::audio::play_sound(self.sound_playing.clone(), crate::system_sound::TYPEWRITER_SOUND.to_string());
-                }
             }
             keyboard::Key::Character(s) => {
                 self.add_character_from_string(s.to_string());
-                // Play typewriter sound if enabled
-                if self.typewriter_mode {
-                    crate::audio::play_sound(self.sound_playing.clone(), crate::system_sound::TYPEWRITER_SOUND.to_string());
-                }
                 return scrollable::snap_to(self.letters_scroll_id.clone(), scrollable::RelativeOffset { x: 0.0, y: 1.0 });
             }
             keyboard::Key::Named(keyboard::key::Named::Space) => {
                 // Check for word before adding space
                 self.check_and_save_word();
                 self.add_space();
-                // Play typewriter sound if enabled
-                if self.typewriter_mode {
-                    crate::audio::play_sound(self.sound_playing.clone(), crate::system_sound::TYPEWRITER_SOUND.to_string());
-                }
                 return scrollable::snap_to(self.letters_scroll_id.clone(), scrollable::RelativeOffset { x: 0.0, y: 1.0 });
             }
             _ => {}
@@ -515,6 +540,23 @@ impl WordsWithToddlers {
             .spacing(20)
             .align_y(alignment::Vertical::Center);
 
+        // Tic Tac Toe button
+        let tictactoe_button = button(
+            text("❌⭕ Tic Tac Toe")
+                .size(30)
+        )
+        .padding(20)
+        .style(|_theme: &Theme, _status| button::Style {
+            background: Some(iced::Background::Color(Color::from_rgb(0.9, 0.5, 0.2))),
+            border: iced::Border {
+                color: Color::from_rgb(1.0, 0.7, 0.4),
+                width: 2.0,
+                radius: 10.0.into(),
+            },
+            ..Default::default()
+        })
+        .on_press(Message::StartTicTacToe);
+
         // Settings button
         let settings_button = button(
             text("⚙️  Settings")
@@ -533,7 +575,7 @@ impl WordsWithToddlers {
         .on_press(Message::NavigateToSettings);
 
         container(
-            column![welcome_row, instructions, challenge_row, settings_button]
+            column![welcome_row, instructions, challenge_row, tictactoe_button, settings_button]
                 .spacing(30)
                 .align_x(alignment::Horizontal::Center),
         )
@@ -546,13 +588,17 @@ impl WordsWithToddlers {
 
     /// Builds the settings screen for sound selection
     fn build_settings_screen(&self) -> Element<Message> {
-        let title = text("Sound Settings")
+        let title = text("Settings")
             .size(60)
             .color(Color::from_rgb(0.9, 0.9, 1.0));
 
-        let subtitle = text("Select the sound that plays when you press Enter")
+        let sound_subtitle = text("Select the sound that plays when you press Enter")
             .size(25)
             .color(Color::from_rgb(0.6, 0.6, 0.6));
+
+        let case_subtitle = text("Word Display")
+            .size(40)
+            .color(Color::from_rgb(0.9, 0.9, 1.0));
 
         // Create grid of sound buttons
         let mut sounds_grid = column![]
@@ -605,28 +651,68 @@ impl WordsWithToddlers {
             sounds_grid = sounds_grid.push(sound_row);
         }
 
-        // Typewriter mode checkbox
-        let typewriter_checkbox = checkbox(
-            "Enable typewriter sound for every keystroke",
-            self.typewriter_mode,
+        // Case toggle buttons
+        let uppercase_button = button(
+            text("ABC (Uppercase)")
+                .size(30)
+                .color(if self.use_uppercase {
+                    Color::from_rgb(1.0, 1.0, 1.0)
+                } else {
+                    Color::from_rgb(0.8, 0.8, 0.8)
+                })
         )
-        .on_toggle(Message::ToggleTypewriterMode)
-        .size(25)
-        .text_size(25)
-        .spacing(10);
-        
-        // Wrap checkbox in a container for styling
-        let typewriter_section = container(typewriter_checkbox)
-            .padding(20)
-            .style(|_theme: &Theme| container::Style {
-                background: Some(iced::Background::Color(Color::from_rgba(0.2, 0.2, 0.25, 0.5))),
-                border: iced::Border {
-                    color: Color::from_rgb(0.3, 0.3, 0.35),
-                    width: 1.0,
-                    radius: 10.0.into(),
+        .padding(20)
+        .style(move |_theme: &Theme, _status| button::Style {
+            background: Some(iced::Background::Color(if self.use_uppercase {
+                Color::from_rgb(0.2, 0.6, 0.9)
+            } else {
+                Color::from_rgb(0.3, 0.3, 0.35)
+            })),
+            border: iced::Border {
+                color: if self.use_uppercase {
+                    Color::from_rgb(0.4, 0.8, 1.0)
+                } else {
+                    Color::from_rgb(0.4, 0.4, 0.45)
                 },
-                ..Default::default()
-            });
+                width: if self.use_uppercase { 3.0 } else { 1.0 },
+                radius: 10.0.into(),
+            },
+            ..Default::default()
+        })
+        .on_press(Message::ToggleUppercase(true));
+
+        let lowercase_button = button(
+            text("abc (Lowercase)")
+                .size(30)
+                .color(if !self.use_uppercase {
+                    Color::from_rgb(1.0, 1.0, 1.0)
+                } else {
+                    Color::from_rgb(0.8, 0.8, 0.8)
+                })
+        )
+        .padding(20)
+        .style(move |_theme: &Theme, _status| button::Style {
+            background: Some(iced::Background::Color(if !self.use_uppercase {
+                Color::from_rgb(0.2, 0.6, 0.9)
+            } else {
+                Color::from_rgb(0.3, 0.3, 0.35)
+            })),
+            border: iced::Border {
+                color: if !self.use_uppercase {
+                    Color::from_rgb(0.4, 0.8, 1.0)
+                } else {
+                    Color::from_rgb(0.4, 0.4, 0.45)
+                },
+                width: if !self.use_uppercase { 3.0 } else { 1.0 },
+                radius: 10.0.into(),
+            },
+            ..Default::default()
+        })
+        .on_press(Message::ToggleUppercase(false));
+
+        let case_toggle_row = row![uppercase_button, lowercase_button]
+            .spacing(15)
+            .align_y(alignment::Vertical::Center);
 
         // Back button
         let back_button = button(
@@ -638,9 +724,10 @@ impl WordsWithToddlers {
 
         let content = column![
             title,
-            subtitle,
+            sound_subtitle,
             sounds_grid,
-            typewriter_section,
+            case_subtitle,
+            case_toggle_row,
             back_button,
         ]
         .spacing(40)
@@ -844,7 +931,12 @@ impl WordsWithToddlers {
                 150
             };
 
-            let target_word = text(&challenge.current_word)
+            let displayed_word = if self.use_uppercase {
+                challenge.current_word.to_uppercase()
+            } else {
+                challenge.current_word.clone()
+            };
+            let target_word = text(displayed_word)
                 .size(target_size)
                 .color(target_word_color);
 
@@ -943,6 +1035,134 @@ impl WordsWithToddlers {
         }
     }
 
+    /// Builds the tic-tac-toe game screen
+    fn build_tic_tac_toe_screen(&self) -> Element<Message> {
+        if let Some(ref game) = self.tic_tac_toe {
+            let title = text("Tic Tac Toe")
+                .size(60)
+                .color(Color::from_rgb(0.9, 0.9, 1.0));
+
+            // Game status message
+            let status_text = match game.game_state {
+                crate::tic_tac_toe::GameState::Playing => {
+                    format!("Player {}'s Turn", game.current_player())
+                }
+                crate::tic_tac_toe::GameState::Won(player) => {
+                    format!("Player {} Wins!", player)
+                }
+                crate::tic_tac_toe::GameState::Draw => {
+                    "It's a Draw!".to_string()
+                }
+            };
+
+            let status = text(status_text)
+                .size(40)
+                .color(Color::from_rgb(0.8, 0.8, 0.9));
+
+            // Build the 3x3 grid
+            let mut board_rows = column![]
+                .spacing(10)
+                .align_x(alignment::Horizontal::Center);
+
+            for row in 0..3 {
+                let mut board_row = row![]
+                    .spacing(10)
+                    .align_y(alignment::Vertical::Center);
+
+                for col in 0..3 {
+                    let position = row * 3 + col;
+                    let cell_content = match game.get_cell(position) {
+                        Some(crate::tic_tac_toe::Player::X) => "X".to_string(),
+                        Some(crate::tic_tac_toe::Player::O) => "O".to_string(),
+                        None => format!("{}", position + 1),
+                    };
+
+                    let cell_color = match game.get_cell(position) {
+                        Some(crate::tic_tac_toe::Player::X) => Color::from_rgb(0.3, 0.7, 1.0),
+                        Some(crate::tic_tac_toe::Player::O) => Color::from_rgb(1.0, 0.5, 0.3),
+                        None => Color::from_rgb(0.5, 0.5, 0.5),
+                    };
+
+                    let cell_button = button(
+                        text(cell_content)
+                            .size(80)
+                            .color(cell_color)
+                    )
+                    .width(Length::Fixed(120.0))
+                    .height(Length::Fixed(120.0))
+                    .style(|_theme: &Theme, _status| button::Style {
+                        background: Some(iced::Background::Color(Color::from_rgb(0.15, 0.15, 0.2))),
+                        border: iced::Border {
+                            color: Color::from_rgb(0.4, 0.4, 0.5),
+                            width: 3.0,
+                            radius: 10.0.into(),
+                        },
+                        ..Default::default()
+                    })
+                    .on_press(Message::TicTacToeMove(position));
+
+                    board_row = board_row.push(cell_button);
+                }
+
+                board_rows = board_rows.push(board_row);
+            }
+
+            // Control buttons
+            let reset_button = button(
+                text("🔄 New Game")
+                    .size(25)
+            )
+            .padding(15)
+            .style(|_theme: &Theme, _status| button::Style {
+                background: Some(iced::Background::Color(Color::from_rgb(0.3, 0.6, 0.3))),
+                border: iced::Border {
+                    color: Color::from_rgb(0.5, 0.8, 0.5),
+                    width: 2.0,
+                    radius: 10.0.into(),
+                },
+                ..Default::default()
+            })
+            .on_press(Message::ResetTicTacToe);
+
+            let back_button = button(
+                text("⬅️  Back")
+                    .size(25)
+            )
+            .padding(15)
+            .style(|_theme: &Theme, _status| button::Style {
+                background: Some(iced::Background::Color(Color::from_rgb(0.25, 0.25, 0.3))),
+                border: iced::Border {
+                    color: Color::from_rgb(0.4, 0.4, 0.45),
+                    width: 1.0,
+                    radius: 10.0.into(),
+                },
+                ..Default::default()
+            })
+            .on_press(Message::ExitTicTacToe);
+
+            let buttons_row = row![reset_button, back_button]
+                .spacing(20)
+                .align_y(alignment::Vertical::Center);
+
+            let instructions = text("Click cells or press 1-9 to play • ESC to exit")
+                .size(20)
+                .color(Color::from_rgb(0.5, 0.5, 0.6));
+
+            container(
+                column![title, status, board_rows, buttons_row, instructions]
+                    .spacing(30)
+                    .align_x(alignment::Horizontal::Center),
+            )
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .align_x(alignment::Horizontal::Center)
+            .align_y(alignment::Vertical::Center)
+            .into()
+        } else {
+            self.build_welcome_screen()
+        }
+    }
+
     /// Handles keyboard input in challenge mode
     fn handle_challenge_key_press(&mut self, key: keyboard::Key) -> Task<Message> {
         // Check if celebrating first
@@ -960,9 +1180,6 @@ impl WordsWithToddlers {
                 if let Some(ref mut challenge) = self.word_challenge {
                     challenge.remove_last_letter();
                 }
-                if self.typewriter_mode {
-                    crate::audio::play_sound(self.sound_playing.clone(), crate::system_sound::TYPEWRITER_SOUND.to_string());
-                }
             }
             keyboard::Key::Named(keyboard::key::Named::Enter) | keyboard::Key::Named(keyboard::key::Named::Space) => {
                 return Task::done(Message::CheckTypedWord);
@@ -972,18 +1189,36 @@ impl WordsWithToddlers {
                     if c.is_alphabetic() {
                         let character = c.to_uppercase().next().unwrap();
                         let color = self.random_color();
-                        let should_play_sound = self.typewriter_mode;
 
                         if let Some(ref mut challenge) = self.word_challenge {
                             challenge.add_letter(Letter::new(character, color));
 
-                            if should_play_sound {
-                                crate::audio::play_sound(self.sound_playing.clone(), crate::system_sound::TYPEWRITER_SOUND.to_string());
-                            }
-
                             // Auto-check if word length matches
                             if challenge.typed_text().len() == challenge.current_word.len() {
                                 return Task::done(Message::CheckTypedWord);
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+        Task::none()
+    }
+
+    /// Handles keyboard input in tic-tac-toe mode
+    fn handle_tictactoe_key_press(&mut self, key: keyboard::Key) -> Task<Message> {
+        match key {
+            keyboard::Key::Named(keyboard::key::Named::Escape) => {
+                return Task::done(Message::ExitTicTacToe);
+            }
+            keyboard::Key::Character(s) => {
+                if let Some(c) = s.chars().next() {
+                    if c.is_numeric() {
+                        if let Some(digit) = c.to_digit(10) {
+                            // Convert 1-9 to 0-8 position
+                            if digit >= 1 && digit <= 9 {
+                                return Task::done(Message::TicTacToeMove((digit - 1) as usize));
                             }
                         }
                     }

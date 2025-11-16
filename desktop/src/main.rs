@@ -13,6 +13,7 @@ mod word_list_loader;
 mod word_challenge;
 mod celebration;
 mod speech;
+mod tic_tac_toe;
 
 use app::WordsWithToddlers;
 use iced::{window, Size};

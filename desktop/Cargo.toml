@@ -3,6 +3,24 @@ name = "words-with-toddlers"
 version = "0.1.0"
 edition = "2021"
 
+[package.metadata.packager]
+product-name = "Words with Toddlers"
+identifier = "com.andrewlombardi.words-with-toddlers"
+category = "Education"
+copyright = "Copyright (c) 2025 Andrew Lombardi"
+description = "A fun typing application for toddlers"
+long-description = """
+Words with Toddlers is a toddler-friendly typing application featuring:
+- Large, colorful letters
+- Word discovery and celebration
+- Challenge modes
+- Fullscreen support
+Perfect for early learners!
+"""
+
+[package.metadata.packager.macos]
+minimum_system_version = "10.13"
+
 [dependencies]
 iced = { version = "0.13", features = ["canvas", "tokio"] }
 rand = "0.8"

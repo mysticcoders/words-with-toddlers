@@ -25,12 +25,20 @@ pub enum Message {
     ReplayWord,
     /// Select a sound by name
     SelectSound(String),
-    /// Toggle typewriter mode
-    ToggleTypewriterMode(bool),
+    /// Toggle uppercase/lowercase display
+    ToggleUppercase(bool),
     /// Check if typed word is correct (challenge mode)
     CheckTypedWord,
     /// Finish celebration and load next word
     FinishCelebration,
     /// Exit challenge mode
     ExitChallenge,
+    /// Start tic-tac-toe game
+    StartTicTacToe,
+    /// Make a move in tic-tac-toe at position (0-8)
+    TicTacToeMove(usize),
+    /// Reset the tic-tac-toe game
+    ResetTicTacToe,
+    /// Exit tic-tac-toe game
+    ExitTicTacToe,
 }

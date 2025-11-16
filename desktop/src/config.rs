@@ -8,17 +8,21 @@ use std::path::PathBuf;
 pub struct AppConfig {
     pub selected_sound: String,
     #[serde(default)]
-    pub typewriter_mode: bool,
-    #[serde(default)]
     pub last_selected_grade: GradeLevel,
+    #[serde(default = "default_uppercase")]
+    pub use_uppercase: bool,
+}
+
+fn default_uppercase() -> bool {
+    true
 }
 
 impl Default for AppConfig {
     fn default() -> Self {
         AppConfig {
             selected_sound: "Swoosh".to_string(),
-            typewriter_mode: false,
             last_selected_grade: GradeLevel::default(),
+            use_uppercase: true,
         }
     }
 }
