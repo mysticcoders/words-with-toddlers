@@ -1,6 +1,9 @@
-use std::io::Cursor;
-use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 use rodio::{Decoder, OutputStream, Sink};
+use std::io::Cursor;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 
 /// Plays a sound effect if no sound is currently playing
 pub fn play_sound(sound_playing: Arc<AtomicBool>, sound_path: String) {

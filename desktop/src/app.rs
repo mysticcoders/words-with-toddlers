@@ -1,19 +1,23 @@
-use iced::{
-    alignment, event, keyboard, widget::{button, checkbox, column, container, row, text, scrollable, Row, scrollable::Id as ScrollableId},
-    window, Color, Element, Event, Length, Subscription, Task, Theme, exit
-};
-use std::sync::{Arc, atomic::AtomicBool};
-use crate::letter::Letter;
-use crate::message::Message;
-use crate::utils::color::hsl_to_rgb;
+use crate::celebration::Celebration;
 use crate::dictionary::Dictionary;
 use crate::discovered_word::DiscoveredWord;
-use crate::session::Session;
 use crate::grade_level::GradeLevel;
-use crate::word_list_loader::WordListLoader;
-use crate::word_challenge::{WordChallenge, ChallengeMode};
-use crate::celebration::Celebration;
+use crate::letter::Letter;
+use crate::message::Message;
+use crate::session::Session;
 use crate::tic_tac_toe::TicTacToe;
+use crate::utils::color::hsl_to_rgb;
+use crate::word_challenge::{ChallengeMode, WordChallenge};
+use crate::word_list_loader::WordListLoader;
+use iced::{
+    alignment, event, exit, keyboard,
+    widget::{
+        button, checkbox, column, container, row, scrollable, scrollable::Id as ScrollableId, text,
+        Row,
+    },
+    window, Color, Element, Event, Length, Subscription, Task, Theme,
+};
+use std::sync::{atomic::AtomicBool, Arc};
 
 /// Represents the different screens in the application
 #[derive(Debug, Clone, PartialEq)]
@@ -74,8 +78,8 @@ impl WordsWithToddlers {
                     // Small delay to ensure window is created in current Space
                     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                 },
-                |_| Message::WindowOpened
-            )
+                |_| Message::WindowOpened,
+            ),
         )
     }
 
@@ -108,7 +112,8 @@ impl WordsWithToddlers {
             }
             Message::StartVisualChallenge => {
                 if let Some(words) = self.word_list_loader.get_words_for_grade(GradeLevel::PreK) {
-                    self.word_challenge = Some(WordChallenge::new(ChallengeMode::Visual, words.clone()));
+                    self.word_challenge =
+                        Some(WordChallenge::new(ChallengeMode::Visual, words.clone()));
                     self.current_screen = Screen::WordChallenge;
 
                     // Speak the first word
@@ -120,7 +125,8 @@ impl WordsWithToddlers {
             }
             Message::StartAudioChallenge => {
                 if let Some(words) = self.word_list_loader.get_words_for_grade(GradeLevel::PreK) {
-                    self.word_challenge = Some(WordChallenge::new(ChallengeMode::Audio, words.clone()));
+                    self.word_challenge =
+                        Some(WordChallenge::new(ChallengeMode::Audio, words.clone()));
                     self.current_screen = Screen::WordChallenge;
 
                     // Speak the first word
@@ -143,16 +149,20 @@ impl WordsWithToddlers {
                         self.celebration = Some(Celebration::new());
 
                         // Play success sound with fresh flag
-                        self.sound_playing.store(false, std::sync::atomic::Ordering::Relaxed);
+                        self.sound_playing
+                            .store(false, std::sync::atomic::Ordering::Relaxed);
                         let sound_path = crate::system_sound::get_sound_path(&self.selected_sound);
-                        crate::audio::play_sound(self.sound_playing.clone(), sound_path.to_string());
+                        crate::audio::play_sound(
+                            self.sound_playing.clone(),
+                            sound_path.to_string(),
+                        );
 
                         // Schedule celebration finish
                         return Task::perform(
                             async {
                                 tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
                             },
-                            |_| Message::FinishCelebration
+                            |_| Message::FinishCelebration,
                         );
                     } else {
                         challenge.handle_incorrect_word();
@@ -165,7 +175,9 @@ impl WordsWithToddlers {
                     // Check if we should level up or down
                     if challenge.should_level_up() {
                         if let Some(new_level) = challenge.level_up() {
-                            if let Some(words) = self.word_list_loader.get_words_for_grade(new_level) {
+                            if let Some(words) =
+                                self.word_list_loader.get_words_for_grade(new_level)
+                            {
                                 challenge.update_word_list(words.clone());
                             }
                         }
@@ -173,7 +185,9 @@ impl WordsWithToddlers {
                         challenge.is_celebrating = false;
                     } else if challenge.should_level_down() {
                         if let Some(new_level) = challenge.level_down() {
-                            if let Some(words) = self.word_list_loader.get_words_for_grade(new_level) {
+                            if let Some(words) =
+                                self.word_list_loader.get_words_for_grade(new_level)
+                            {
                                 challenge.update_word_list(words.clone());
                             }
                         }
@@ -274,9 +288,7 @@ impl WordsWithToddlers {
             Screen::WordChallenge => self.build_word_challenge_screen(),
             Screen::TicTacToe => self.build_tic_tac_toe_screen(),
             Screen::Main => {
-                let mut main_column = column![]
-                    .spacing(20)
-                    .align_x(alignment::Horizontal::Center);
+                let mut main_column = column![].spacing(20).align_x(alignment::Horizontal::Center);
 
                 // Add discovered words at the top if any exist
                 if !self.discovered_words.is_empty() {
@@ -318,8 +330,7 @@ impl WordsWithToddlers {
                 }
                 _ => None,
             }),
-            iced::time::every(std::time::Duration::from_millis(530))
-                .map(|_| Message::ToggleCursor),
+            iced::time::every(std::time::Duration::from_millis(530)).map(|_| Message::ToggleCursor),
         ])
     }
 
@@ -347,21 +358,23 @@ impl WordsWithToddlers {
             keyboard::Key::Named(keyboard::key::Named::Enter) => {
                 // Save session if we have typed anything
                 if !self.letters.is_empty() {
-                    let typed_text: String = self.letters.iter()
-                        .map(|l| l.character)
-                        .collect();
-                    
-                    let session = Session::new(typed_text, self.discovered_words.iter()
-                        .map(|w| w.text.clone())
-                        .collect());
-                    
+                    let typed_text: String = self.letters.iter().map(|l| l.character).collect();
+
+                    let session = Session::new(
+                        typed_text,
+                        self.discovered_words
+                            .iter()
+                            .map(|w| w.text.clone())
+                            .collect(),
+                    );
+
                     // Try to save the session
                     match session.save() {
                         Ok(path) => eprintln!("Session saved to: {:?}", path),
                         Err(e) => eprintln!("Failed to save session: {}", e),
                     }
                 }
-                
+
                 // Check for any last word before clearing
                 self.check_and_save_word();
 
@@ -384,13 +397,19 @@ impl WordsWithToddlers {
             }
             keyboard::Key::Character(s) => {
                 self.add_character_from_string(s.to_string());
-                return scrollable::snap_to(self.letters_scroll_id.clone(), scrollable::RelativeOffset { x: 0.0, y: 1.0 });
+                return scrollable::snap_to(
+                    self.letters_scroll_id.clone(),
+                    scrollable::RelativeOffset { x: 0.0, y: 1.0 },
+                );
             }
             keyboard::Key::Named(keyboard::key::Named::Space) => {
                 // Check for word before adding space
                 self.check_and_save_word();
                 self.add_space();
-                return scrollable::snap_to(self.letters_scroll_id.clone(), scrollable::RelativeOffset { x: 0.0, y: 1.0 });
+                return scrollable::snap_to(
+                    self.letters_scroll_id.clone(),
+                    scrollable::RelativeOffset { x: 0.0, y: 1.0 },
+                );
             }
             _ => {}
         }
@@ -411,7 +430,8 @@ impl WordsWithToddlers {
                 } else {
                     c
                 };
-                self.letters.push(Letter::new(character, self.random_color()));
+                self.letters
+                    .push(Letter::new(character, self.random_color()));
             }
         }
     }
@@ -424,31 +444,32 @@ impl WordsWithToddlers {
     /// Checks the last word segment (since last space) and finds all valid words
     fn check_and_save_word(&mut self) {
         // Find the last space position (or start from beginning)
-        let last_space_pos = self.letters
+        let last_space_pos = self
+            .letters
             .iter()
             .rposition(|l| l.character == ' ')
             .map(|pos| pos + 1)
             .unwrap_or(0);
-        
+
         // Get only the letters since the last space
         let last_segment: String = self.letters[last_space_pos..]
             .iter()
             .map(|l| l.character)
             .collect();
-        
+
         // Skip if empty or only spaces
         if last_segment.trim().is_empty() {
             return;
         }
-        
+
         // Parse compound words from the segment
         let found_words = self.dictionary.parse_compound_words(&last_segment);
-        
+
         // Add each found word (duplicates are OK)
         for word in found_words {
             let color = self.random_color();
             self.discovered_words.push(DiscoveredWord::new(word, color));
-            
+
             // Keep only the last 20 words
             if self.discovered_words.len() > 20 {
                 self.discovered_words.remove(0);
@@ -474,7 +495,7 @@ impl WordsWithToddlers {
         let placeholder_text = text("Ready for more words...")
             .size(60)
             .color(Color::from_rgb(0.4, 0.4, 0.45));
-        
+
         container(placeholder_text)
             .width(Length::Fill)
             .height(Length::Fill)
@@ -497,87 +518,81 @@ impl WordsWithToddlers {
                     .color(Color::from_rgb(r, g, b)),
             );
         }
-        
+
         let instructions = text("Type any letter to start Discovery Mode!\nPress Space to save words • Enter to clear all • Escape to exit")
             .size(30)
             .color(Color::from_rgb(0.6, 0.6, 0.6));
 
         // Visual challenge button
-        let visual_button = button(
-            text("👁️ See Words")
-                .size(30)
-        )
-        .padding(20)
-        .style(|_theme: &Theme, _status| button::Style {
-            background: Some(iced::Background::Color(Color::from_rgb(0.2, 0.6, 0.9))),
-            border: iced::Border {
-                color: Color::from_rgb(0.4, 0.8, 1.0),
-                width: 2.0,
-                radius: 10.0.into(),
-            },
-            ..Default::default()
-        })
-        .on_press(Message::StartVisualChallenge);
+        let visual_button = button(text("👁️ See Words").size(30))
+            .padding(20)
+            .style(|_theme: &Theme, _status| button::Style {
+                background: Some(iced::Background::Color(Color::from_rgb(0.2, 0.6, 0.9))),
+                border: iced::Border {
+                    color: Color::from_rgb(0.4, 0.8, 1.0),
+                    width: 2.0,
+                    radius: 10.0.into(),
+                },
+                ..Default::default()
+            })
+            .on_press(Message::StartVisualChallenge);
 
         // Audio challenge button
-        let audio_button = button(
-            text("🔊 Hear Words")
-                .size(30)
-        )
-        .padding(20)
-        .style(|_theme: &Theme, _status| button::Style {
-            background: Some(iced::Background::Color(Color::from_rgb(0.6, 0.2, 0.9))),
-            border: iced::Border {
-                color: Color::from_rgb(0.8, 0.4, 1.0),
-                width: 2.0,
-                radius: 10.0.into(),
-            },
-            ..Default::default()
-        })
-        .on_press(Message::StartAudioChallenge);
+        let audio_button = button(text("🔊 Hear Words").size(30))
+            .padding(20)
+            .style(|_theme: &Theme, _status| button::Style {
+                background: Some(iced::Background::Color(Color::from_rgb(0.6, 0.2, 0.9))),
+                border: iced::Border {
+                    color: Color::from_rgb(0.8, 0.4, 1.0),
+                    width: 2.0,
+                    radius: 10.0.into(),
+                },
+                ..Default::default()
+            })
+            .on_press(Message::StartAudioChallenge);
 
         let challenge_row = row![visual_button, audio_button]
             .spacing(20)
             .align_y(alignment::Vertical::Center);
 
         // Tic Tac Toe button
-        let tictactoe_button = button(
-            text("❌⭕ Tic Tac Toe")
-                .size(30)
-        )
-        .padding(20)
-        .style(|_theme: &Theme, _status| button::Style {
-            background: Some(iced::Background::Color(Color::from_rgb(0.9, 0.5, 0.2))),
-            border: iced::Border {
-                color: Color::from_rgb(1.0, 0.7, 0.4),
-                width: 2.0,
-                radius: 10.0.into(),
-            },
-            ..Default::default()
-        })
-        .on_press(Message::StartTicTacToe);
+        let tictactoe_button = button(text("❌⭕ Tic Tac Toe").size(30))
+            .padding(20)
+            .style(|_theme: &Theme, _status| button::Style {
+                background: Some(iced::Background::Color(Color::from_rgb(0.9, 0.5, 0.2))),
+                border: iced::Border {
+                    color: Color::from_rgb(1.0, 0.7, 0.4),
+                    width: 2.0,
+                    radius: 10.0.into(),
+                },
+                ..Default::default()
+            })
+            .on_press(Message::StartTicTacToe);
 
         // Settings button
-        let settings_button = button(
-            text("⚙️  Settings")
-                .size(25)
-        )
-        .padding(15)
-        .style(|_theme: &Theme, _status| button::Style {
-            background: Some(iced::Background::Color(Color::from_rgb(0.25, 0.25, 0.3))),
-            border: iced::Border {
-                color: Color::from_rgb(0.4, 0.4, 0.45),
-                width: 1.0,
-                radius: 10.0.into(),
-            },
-            ..Default::default()
-        })
-        .on_press(Message::NavigateToSettings);
+        let settings_button = button(text("⚙️  Settings").size(25))
+            .padding(15)
+            .style(|_theme: &Theme, _status| button::Style {
+                background: Some(iced::Background::Color(Color::from_rgb(0.25, 0.25, 0.3))),
+                border: iced::Border {
+                    color: Color::from_rgb(0.4, 0.4, 0.45),
+                    width: 1.0,
+                    radius: 10.0.into(),
+                },
+                ..Default::default()
+            })
+            .on_press(Message::NavigateToSettings);
 
         container(
-            column![welcome_row, instructions, challenge_row, tictactoe_button, settings_button]
-                .spacing(30)
-                .align_x(alignment::Horizontal::Center),
+            column![
+                welcome_row,
+                instructions,
+                challenge_row,
+                tictactoe_button,
+                settings_button
+            ]
+            .spacing(30)
+            .align_x(alignment::Horizontal::Center),
         )
         .width(Length::Fill)
         .height(Length::Fill)
@@ -601,16 +616,12 @@ impl WordsWithToddlers {
             .color(Color::from_rgb(0.9, 0.9, 1.0));
 
         // Create grid of sound buttons
-        let mut sounds_grid = column![]
-            .spacing(15)
-            .align_x(alignment::Horizontal::Center);
+        let mut sounds_grid = column![].spacing(15).align_x(alignment::Horizontal::Center);
 
         // Create rows of 3 sound buttons each
         let sounds = crate::system_sound::SOUNDS;
         for row_sounds in sounds.chunks(3) {
-            let mut sound_row = row![]
-                .spacing(15)
-                .align_y(alignment::Vertical::Center);
+            let mut sound_row = row![].spacing(15).align_y(alignment::Vertical::Center);
 
             for sound in row_sounds {
                 let is_selected = sound.name == self.selected_sound;
@@ -620,30 +631,27 @@ impl WordsWithToddlers {
                     Color::from_rgb(0.3, 0.3, 0.35) // Gray for unselected
                 };
 
-                let sound_button = button(
-                    text(sound.display_name)
-                        .size(30)
-                        .color(if is_selected {
-                            Color::from_rgb(1.0, 1.0, 1.0)
-                        } else {
-                            Color::from_rgb(0.8, 0.8, 0.8)
-                        })
-                )
-                .padding(20)
-                .style(move |_theme: &Theme, _status| button::Style {
-                    background: Some(iced::Background::Color(button_color)),
-                    border: iced::Border {
-                        color: if is_selected {
-                            Color::from_rgb(0.4, 0.8, 1.0)
-                        } else {
-                            Color::from_rgb(0.4, 0.4, 0.45)
+                let sound_button =
+                    button(text(sound.display_name).size(30).color(if is_selected {
+                        Color::from_rgb(1.0, 1.0, 1.0)
+                    } else {
+                        Color::from_rgb(0.8, 0.8, 0.8)
+                    }))
+                    .padding(20)
+                    .style(move |_theme: &Theme, _status| button::Style {
+                        background: Some(iced::Background::Color(button_color)),
+                        border: iced::Border {
+                            color: if is_selected {
+                                Color::from_rgb(0.4, 0.8, 1.0)
+                            } else {
+                                Color::from_rgb(0.4, 0.4, 0.45)
+                            },
+                            width: if is_selected { 3.0 } else { 1.0 },
+                            radius: 10.0.into(),
                         },
-                        width: if is_selected { 3.0 } else { 1.0 },
-                        radius: 10.0.into(),
-                    },
-                    ..Default::default()
-                })
-                .on_press(Message::SelectSound(sound.name.to_string()));
+                        ..Default::default()
+                    })
+                    .on_press(Message::SelectSound(sound.name.to_string()));
 
                 sound_row = sound_row.push(sound_button);
             }
@@ -652,15 +660,13 @@ impl WordsWithToddlers {
         }
 
         // Case toggle buttons
-        let uppercase_button = button(
-            text("ABC (Uppercase)")
-                .size(30)
-                .color(if self.use_uppercase {
-                    Color::from_rgb(1.0, 1.0, 1.0)
-                } else {
-                    Color::from_rgb(0.8, 0.8, 0.8)
-                })
-        )
+        let uppercase_button = button(text("ABC (Uppercase)").size(30).color(
+            if self.use_uppercase {
+                Color::from_rgb(1.0, 1.0, 1.0)
+            } else {
+                Color::from_rgb(0.8, 0.8, 0.8)
+            },
+        ))
         .padding(20)
         .style(move |_theme: &Theme, _status| button::Style {
             background: Some(iced::Background::Color(if self.use_uppercase {
@@ -681,15 +687,13 @@ impl WordsWithToddlers {
         })
         .on_press(Message::ToggleUppercase(true));
 
-        let lowercase_button = button(
-            text("abc (Lowercase)")
-                .size(30)
-                .color(if !self.use_uppercase {
-                    Color::from_rgb(1.0, 1.0, 1.0)
-                } else {
-                    Color::from_rgb(0.8, 0.8, 0.8)
-                })
-        )
+        let lowercase_button = button(text("abc (Lowercase)").size(30).color(
+            if !self.use_uppercase {
+                Color::from_rgb(1.0, 1.0, 1.0)
+            } else {
+                Color::from_rgb(0.8, 0.8, 0.8)
+            },
+        ))
         .padding(20)
         .style(move |_theme: &Theme, _status| button::Style {
             background: Some(iced::Background::Color(if !self.use_uppercase {
@@ -715,12 +719,9 @@ impl WordsWithToddlers {
             .align_y(alignment::Vertical::Center);
 
         // Back button
-        let back_button = button(
-            text("← Back to Welcome")
-                .size(25)
-        )
-        .padding(15)
-        .on_press(Message::NavigateToWelcome);
+        let back_button = button(text("← Back to Welcome").size(25))
+            .padding(15)
+            .on_press(Message::NavigateToWelcome);
 
         let content = column![
             title,
@@ -745,65 +746,55 @@ impl WordsWithToddlers {
     /// Builds the display for discovered words with wrapping
     fn build_discovered_words_display(&self) -> Element<Message> {
         // Create a column to hold multiple rows of words
-        let mut words_column = column![]
-            .spacing(10)
-            .align_x(alignment::Horizontal::Center);
-        
+        let mut words_column = column![].spacing(10).align_x(alignment::Horizontal::Center);
+
         // Build rows of words, wrapping when needed
         let mut current_row: Vec<Element<Message>> = Vec::new();
         let mut row_width = 0.0;
         let max_width = 1100.0; // Approximate max width before wrapping
         let char_width = 25.0; // Approximate width per character at size 40
-        
+
         for word in &self.discovered_words {
             let word_width = word.text.len() as f32 * char_width + 20.0; // Add spacing
-            
+
             // Check if we need to wrap to next line
             if row_width + word_width > max_width && !current_row.is_empty() {
                 // Add current row to column
-                let mut row_container = Row::new()
-                    .spacing(20)
-                    .align_y(alignment::Vertical::Center);
+                let mut row_container = Row::new().spacing(20).align_y(alignment::Vertical::Center);
                 for elem in current_row.drain(..) {
                     row_container = row_container.push(elem);
                 }
                 words_column = words_column.push(row_container);
                 row_width = 0.0;
             }
-            
+
             // Add word to current row
-            current_row.push(
-                text(&word.text)
-                    .size(40)
-                    .color(word.color)
-                    .into()
-            );
+            current_row.push(text(&word.text).size(40).color(word.color).into());
             row_width += word_width;
         }
-        
+
         // Add any remaining words in the last row
         if !current_row.is_empty() {
-            let mut row_container = Row::new()
-                .spacing(20)
-                .align_y(alignment::Vertical::Center);
+            let mut row_container = Row::new().spacing(20).align_y(alignment::Vertical::Center);
             for elem in current_row {
                 row_container = row_container.push(elem);
             }
             words_column = words_column.push(row_container);
         }
-        
+
         container(
-            scrollable(words_column)
-                .direction(scrollable::Direction::Vertical(
-                    scrollable::Scrollbar::default()
-                ))
+            scrollable(words_column).direction(scrollable::Direction::Vertical(
+                scrollable::Scrollbar::default(),
+            )),
         )
         .width(Length::Fill)
         .height(Length::Shrink)
         .max_height(150) // Limit height to prevent taking too much space
         .padding(10)
         .style(|_theme: &Theme| container::Style {
-            background: Some(iced::Background::Color(Color::from_rgba(0.1, 0.1, 0.15, 0.5))),
+            background: Some(iced::Background::Color(Color::from_rgba(
+                0.1, 0.1, 0.15, 0.5,
+            ))),
             border: iced::Border {
                 color: Color::from_rgba(0.3, 0.3, 0.4, 0.3),
                 width: 1.0,
@@ -818,21 +809,17 @@ impl WordsWithToddlers {
     fn build_letters_display(&self) -> Element<Message> {
         // Fixed letter size for consistency
         let letter_size = 120;
-        
+
         // Create a column to hold multiple rows of letters
-        let mut letters_column = column![]
-            .spacing(10)
-            .align_x(alignment::Horizontal::Center);
-        
+        let mut letters_column = column![].spacing(10).align_x(alignment::Horizontal::Center);
+
         // Calculate how many letters fit per row based on window width
         let letters_per_row = 15; // Approximate for 1200px width with 120px letters
-        
+
         // Build rows of letters
-        let mut current_row = row![]
-            .spacing(5)
-            .align_y(alignment::Vertical::Center);
+        let mut current_row = row![].spacing(5).align_y(alignment::Vertical::Center);
         let mut letter_count = 0;
-        
+
         for letter in &self.letters {
             // Add letter to current row
             current_row = current_row.push(
@@ -845,9 +832,7 @@ impl WordsWithToddlers {
             // Check if we need to wrap to next line
             if letter_count >= letters_per_row {
                 letters_column = letters_column.push(current_row);
-                current_row = row![]
-                    .spacing(5)
-                    .align_y(alignment::Vertical::Center);
+                current_row = row![].spacing(5).align_y(alignment::Vertical::Center);
                 letter_count = 0;
             }
         }
@@ -859,23 +844,19 @@ impl WordsWithToddlers {
         } else {
             Color::from_rgba(1.0, 1.0, 1.0, 0.0)
         };
-        current_row = current_row.push(
-            text("|")
-                .size(letter_size)
-                .color(cursor_color),
-        );
+        current_row = current_row.push(text("|").size(letter_size).color(cursor_color));
 
         // Add any remaining letters (and cursor) in the last row
         // Cursor is always present now, so always add the row
         letters_column = letters_column.push(current_row);
-        
+
         // Wrap in scrollable container if content gets too tall
         container(
             scrollable(letters_column)
                 .id(self.letters_scroll_id.clone())
                 .direction(scrollable::Direction::Vertical(
-                    scrollable::Scrollbar::default()
-                ))
+                    scrollable::Scrollbar::default(),
+                )),
         )
         .width(Length::Fill)
         .height(Length::Fill)
@@ -896,9 +877,7 @@ impl WordsWithToddlers {
     /// Builds the word challenge screen
     fn build_word_challenge_screen(&self) -> Element<Message> {
         if let Some(ref challenge) = self.word_challenge {
-            let mut content_column = column![]
-                .spacing(40)
-                .align_x(alignment::Horizontal::Center);
+            let mut content_column = column![].spacing(40).align_x(alignment::Horizontal::Center);
 
             // Score and difficulty display
             let header_row = row![
@@ -952,30 +931,25 @@ impl WordsWithToddlers {
                 content_column = content_column.push(target_word);
             } else {
                 // In audio mode, show replay button
-                let replay_button = button(
-                    text("🔊 Replay Word")
-                        .size(50)
-                )
-                .padding(30)
-                .style(|_theme: &Theme, _status| button::Style {
-                    background: Some(iced::Background::Color(Color::from_rgb(0.6, 0.2, 0.9))),
-                    border: iced::Border {
-                        color: Color::from_rgb(0.8, 0.4, 1.0),
-                        width: 2.0,
-                        radius: 15.0.into(),
-                    },
-                    ..Default::default()
-                })
-                .on_press(Message::ReplayWord);
+                let replay_button = button(text("🔊 Replay Word").size(50))
+                    .padding(30)
+                    .style(|_theme: &Theme, _status| button::Style {
+                        background: Some(iced::Background::Color(Color::from_rgb(0.6, 0.2, 0.9))),
+                        border: iced::Border {
+                            color: Color::from_rgb(0.8, 0.4, 1.0),
+                            width: 2.0,
+                            radius: 15.0.into(),
+                        },
+                        ..Default::default()
+                    })
+                    .on_press(Message::ReplayWord);
 
                 content_column = content_column.push(replay_button);
             }
 
             // Typed letters display
             if !challenge.is_celebrating {
-                let mut typed_row = row![]
-                    .spacing(5)
-                    .align_y(alignment::Vertical::Center);
+                let mut typed_row = row![].spacing(5).align_y(alignment::Vertical::Center);
 
                 for letter in &challenge.typed_letters {
                     typed_row = typed_row.push(
@@ -991,17 +965,16 @@ impl WordsWithToddlers {
                 } else {
                     Color::from_rgba(1.0, 1.0, 1.0, 0.0)
                 };
-                typed_row = typed_row.push(
-                    text("|")
-                        .size(100)
-                        .color(cursor_color),
-                );
+                typed_row = typed_row.push(text("|").size(100).color(cursor_color));
 
                 content_column = content_column.push(typed_row);
             } else if let Some(ref celebration) = self.celebration {
-                let celebration_text = text("✓ Correct!")
-                    .size(80)
-                    .color(Color::from_rgba(0.2, 1.0, 0.3, celebration.opacity()));
+                let celebration_text = text("✓ Correct!").size(80).color(Color::from_rgba(
+                    0.2,
+                    1.0,
+                    0.3,
+                    celebration.opacity(),
+                ));
 
                 content_column = content_column.push(celebration_text);
             }
@@ -1050,9 +1023,7 @@ impl WordsWithToddlers {
                 crate::tic_tac_toe::GameState::Won(player) => {
                     format!("Player {} Wins!", player)
                 }
-                crate::tic_tac_toe::GameState::Draw => {
-                    "It's a Draw!".to_string()
-                }
+                crate::tic_tac_toe::GameState::Draw => "It's a Draw!".to_string(),
             };
 
             let status = text(status_text)
@@ -1060,14 +1031,10 @@ impl WordsWithToddlers {
                 .color(Color::from_rgb(0.8, 0.8, 0.9));
 
             // Build the 3x3 grid
-            let mut board_rows = column![]
-                .spacing(10)
-                .align_x(alignment::Horizontal::Center);
+            let mut board_rows = column![].spacing(10).align_x(alignment::Horizontal::Center);
 
             for row in 0..3 {
-                let mut board_row = row![]
-                    .spacing(10)
-                    .align_y(alignment::Vertical::Center);
+                let mut board_row = row![].spacing(10).align_y(alignment::Vertical::Center);
 
                 for col in 0..3 {
                     let position = row * 3 + col;
@@ -1083,23 +1050,21 @@ impl WordsWithToddlers {
                         None => Color::from_rgb(0.5, 0.5, 0.5),
                     };
 
-                    let cell_button = button(
-                        text(cell_content)
-                            .size(80)
-                            .color(cell_color)
-                    )
-                    .width(Length::Fixed(120.0))
-                    .height(Length::Fixed(120.0))
-                    .style(|_theme: &Theme, _status| button::Style {
-                        background: Some(iced::Background::Color(Color::from_rgb(0.15, 0.15, 0.2))),
-                        border: iced::Border {
-                            color: Color::from_rgb(0.4, 0.4, 0.5),
-                            width: 3.0,
-                            radius: 10.0.into(),
-                        },
-                        ..Default::default()
-                    })
-                    .on_press(Message::TicTacToeMove(position));
+                    let cell_button = button(text(cell_content).size(80).color(cell_color))
+                        .width(Length::Fixed(120.0))
+                        .height(Length::Fixed(120.0))
+                        .style(|_theme: &Theme, _status| button::Style {
+                            background: Some(iced::Background::Color(Color::from_rgb(
+                                0.15, 0.15, 0.2,
+                            ))),
+                            border: iced::Border {
+                                color: Color::from_rgb(0.4, 0.4, 0.5),
+                                width: 3.0,
+                                radius: 10.0.into(),
+                            },
+                            ..Default::default()
+                        })
+                        .on_press(Message::TicTacToeMove(position));
 
                     board_row = board_row.push(cell_button);
                 }
@@ -1108,37 +1073,31 @@ impl WordsWithToddlers {
             }
 
             // Control buttons
-            let reset_button = button(
-                text("🔄 New Game")
-                    .size(25)
-            )
-            .padding(15)
-            .style(|_theme: &Theme, _status| button::Style {
-                background: Some(iced::Background::Color(Color::from_rgb(0.3, 0.6, 0.3))),
-                border: iced::Border {
-                    color: Color::from_rgb(0.5, 0.8, 0.5),
-                    width: 2.0,
-                    radius: 10.0.into(),
-                },
-                ..Default::default()
-            })
-            .on_press(Message::ResetTicTacToe);
+            let reset_button = button(text("🔄 New Game").size(25))
+                .padding(15)
+                .style(|_theme: &Theme, _status| button::Style {
+                    background: Some(iced::Background::Color(Color::from_rgb(0.3, 0.6, 0.3))),
+                    border: iced::Border {
+                        color: Color::from_rgb(0.5, 0.8, 0.5),
+                        width: 2.0,
+                        radius: 10.0.into(),
+                    },
+                    ..Default::default()
+                })
+                .on_press(Message::ResetTicTacToe);
 
-            let back_button = button(
-                text("⬅️  Back")
-                    .size(25)
-            )
-            .padding(15)
-            .style(|_theme: &Theme, _status| button::Style {
-                background: Some(iced::Background::Color(Color::from_rgb(0.25, 0.25, 0.3))),
-                border: iced::Border {
-                    color: Color::from_rgb(0.4, 0.4, 0.45),
-                    width: 1.0,
-                    radius: 10.0.into(),
-                },
-                ..Default::default()
-            })
-            .on_press(Message::ExitTicTacToe);
+            let back_button = button(text("⬅️  Back").size(25))
+                .padding(15)
+                .style(|_theme: &Theme, _status| button::Style {
+                    background: Some(iced::Background::Color(Color::from_rgb(0.25, 0.25, 0.3))),
+                    border: iced::Border {
+                        color: Color::from_rgb(0.4, 0.4, 0.45),
+                        width: 1.0,
+                        radius: 10.0.into(),
+                    },
+                    ..Default::default()
+                })
+                .on_press(Message::ExitTicTacToe);
 
             let buttons_row = row![reset_button, back_button]
                 .spacing(20)
@@ -1181,7 +1140,8 @@ impl WordsWithToddlers {
                     challenge.remove_last_letter();
                 }
             }
-            keyboard::Key::Named(keyboard::key::Named::Enter) | keyboard::Key::Named(keyboard::key::Named::Space) => {
+            keyboard::Key::Named(keyboard::key::Named::Enter)
+            | keyboard::Key::Named(keyboard::key::Named::Space) => {
                 return Task::done(Message::CheckTypedWord);
             }
             keyboard::Key::Character(s) => {

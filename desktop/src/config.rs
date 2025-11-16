@@ -29,8 +29,7 @@ impl Default for AppConfig {
 
 /// Gets the configuration directory path
 fn get_config_dir() -> Result<PathBuf, Box<dyn std::error::Error>> {
-    let home_dir = dirs::home_dir()
-        .ok_or("Could not find home directory")?;
+    let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
 
     let config_dir = home_dir
         .join("Library")

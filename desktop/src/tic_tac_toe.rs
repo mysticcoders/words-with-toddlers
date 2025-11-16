@@ -60,7 +60,8 @@ impl TicTacToe {
     }
 
     pub fn make_move(&mut self, position: usize) -> bool {
-        if position >= 9 || self.board[position].is_some() || self.game_state != GameState::Playing {
+        if position >= 9 || self.board[position].is_some() || self.game_state != GameState::Playing
+        {
             return false;
         }
 

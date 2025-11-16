@@ -1,19 +1,19 @@
 mod app;
-mod letter;
-mod message;
-mod utils;
+mod audio;
+mod celebration;
+mod config;
 mod dictionary;
 mod discovered_word;
-mod session;
-mod audio;
-mod system_sound;
-mod config;
 mod grade_level;
-mod word_list_loader;
-mod word_challenge;
-mod celebration;
+mod letter;
+mod message;
+mod session;
 mod speech;
+mod system_sound;
 mod tic_tac_toe;
+mod utils;
+mod word_challenge;
+mod word_list_loader;
 
 use app::WordsWithToddlers;
 use iced::{window, Size};
@@ -31,11 +31,15 @@ fn main() -> iced::Result {
     if let Ok(cwd) = env::current_dir() {
         eprintln!("Words with Toddlers started from: {:?}", cwd);
     }
-    iced::application("Words with Toddlers", WordsWithToddlers::update, WordsWithToddlers::view)
-        .window(create_window_settings())
-        .subscription(WordsWithToddlers::subscription)
-        .theme(WordsWithToddlers::theme)
-        .run_with(WordsWithToddlers::new)
+    iced::application(
+        "Words with Toddlers",
+        WordsWithToddlers::update,
+        WordsWithToddlers::view,
+    )
+    .window(create_window_settings())
+    .subscription(WordsWithToddlers::subscription)
+    .theme(WordsWithToddlers::theme)
+    .run_with(WordsWithToddlers::new)
 }
 
 /// Creates the window settings for the application

@@ -2,7 +2,7 @@ use crate::grade_level::GradeLevel;
 use crate::letter::Letter;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use std::collections::{VecDeque, HashSet};
+use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChallengeMode {
@@ -51,7 +51,8 @@ impl WordChallenge {
             let mut rng = thread_rng();
 
             // Filter out completed words
-            let remaining_words: Vec<&String> = self.available_words
+            let remaining_words: Vec<&String> = self
+                .available_words
                 .iter()
                 .filter(|w| !self.completed_words.contains(*w))
                 .collect();
