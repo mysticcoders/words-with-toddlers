@@ -30,7 +30,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libxkbcommon-dev libwayland-dev
+          sudo apt-get install -y libxkbcommon-dev libwayland-dev libasound2-dev
       
       - name: Cache cargo registry
         uses: actions/cache@v3
