@@ -14,6 +14,7 @@ impl Celebration {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_active(&self) -> bool {
         self.start_time.elapsed() < self.duration
     }

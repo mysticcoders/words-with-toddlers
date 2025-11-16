@@ -16,6 +16,7 @@ pub enum Message {
     /// Navigate to welcome screen
     NavigateToWelcome,
     /// Navigate to main (discovery mode) screen
+    #[allow(dead_code)]
     NavigateToMain,
     /// Start visual challenge mode
     StartVisualChallenge,

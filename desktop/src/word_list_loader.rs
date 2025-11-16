@@ -88,6 +88,7 @@ impl WordListLoader {
         self.words_by_grade.get(&grade)
     }
 
+    #[allow(dead_code)]
     pub fn word_count_for_grade(&self, grade: GradeLevel) -> usize {
         self.words_by_grade
             .get(&grade)

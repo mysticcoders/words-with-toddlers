@@ -41,6 +41,7 @@ pub const SOUNDS: &[SystemSound] = &[
 ];
 
 /// Typewriter sound for keystroke mode
+#[allow(dead_code)]
 pub const TYPEWRITER_SOUND: &str = "../shared/sounds/typewriter-key.wav";
 
 /// Get the default sound (Swoosh)

@@ -12,8 +12,7 @@ use crate::word_list_loader::WordListLoader;
 use iced::{
     alignment, event, exit, keyboard,
     widget::{
-        button, checkbox, column, container, row, scrollable, scrollable::Id as ScrollableId, text,
-        Row,
+        button, column, container, row, scrollable, scrollable::Id as ScrollableId, text, Row,
     },
     window, Color, Element, Event, Length, Subscription, Task, Theme,
 };
@@ -1177,7 +1176,7 @@ impl WordsWithToddlers {
                     if c.is_numeric() {
                         if let Some(digit) = c.to_digit(10) {
                             // Convert 1-9 to 0-8 position
-                            if digit >= 1 && digit <= 9 {
+                            if (1..=9).contains(&digit) {
                                 return Task::done(Message::TicTacToeMove((digit - 1) as usize));
                             }
                         }

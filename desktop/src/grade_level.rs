@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum GradeLevel {
+    #[default]
     PreK,
     Kindergarten,
     First,
@@ -13,6 +14,7 @@ pub enum GradeLevel {
 }
 
 impl GradeLevel {
+    #[allow(dead_code)]
     pub fn all() -> Vec<GradeLevel> {
         vec![
             GradeLevel::PreK,
@@ -39,6 +41,7 @@ impl GradeLevel {
         }
     }
 
+    #[allow(dead_code)]
     pub fn short_name(&self) -> &str {
         match self {
             GradeLevel::PreK => "Pre-K",
@@ -79,8 +82,3 @@ impl GradeLevel {
     }
 }
 
-impl Default for GradeLevel {
-    fn default() -> Self {
-        GradeLevel::PreK
-    }
-}

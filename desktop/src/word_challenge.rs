@@ -63,10 +63,8 @@ impl WordChallenge {
                 if let Some(word) = self.available_words.choose(&mut rng) {
                     self.current_word = word.clone();
                 }
-            } else {
-                if let Some(word) = remaining_words.choose(&mut rng) {
-                    self.current_word = (*word).clone();
-                }
+            } else if let Some(word) = remaining_words.choose(&mut rng) {
+                self.current_word = (*word).clone();
             }
         }
         self.typed_letters.clear();
@@ -166,6 +164,7 @@ impl WordChallenge {
         self.typed_letters.pop();
     }
 
+    #[allow(dead_code)]
     pub fn clear_typed(&mut self) {
         self.typed_letters.clear();
     }
