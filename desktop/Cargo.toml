@@ -17,6 +17,7 @@ Words with Toddlers is a toddler-friendly typing application featuring:
 - Fullscreen support
 Perfect for early learners!
 """
+icons = ["app_icon.icns"]
 
 [package.metadata.packager.macos]
 minimum_system_version = "10.13"
