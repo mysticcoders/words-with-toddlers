@@ -1,3 +1,5 @@
+use crate::config::ColorPalette;
+use crate::kiosk_mode::KioskModeStatus;
 use iced::keyboard;
 
 /// Application messages for handling user interactions
@@ -34,12 +36,26 @@ pub enum Message {
     FinishCelebration,
     /// Exit challenge mode
     ExitChallenge,
-    /// Start tic-tac-toe game
+    /// Show tic-tac-toe mode selection
     StartTicTacToe,
+    /// Start one-player tic-tac-toe (vs computer)
+    StartTicTacToeOnePlayer,
+    /// Start two-player tic-tac-toe
+    StartTicTacToeTwoPlayer,
     /// Make a move in tic-tac-toe at position (0-8)
     TicTacToeMove(usize),
+    /// Computer makes its move
+    TicTacToeComputerMove,
     /// Reset the tic-tac-toe game
     ResetTicTacToe,
     /// Exit tic-tac-toe game
     ExitTicTacToe,
+    /// Toggle kiosk mode on/off
+    ToggleKioskMode(bool),
+    /// Kiosk mode status changed
+    KioskModeStatusChanged(KioskModeStatus),
+    /// Request accessibility permission for kiosk mode
+    RequestAccessibilityPermission,
+    /// Select a color palette for letter colors
+    SelectColorPalette(ColorPalette),
 }

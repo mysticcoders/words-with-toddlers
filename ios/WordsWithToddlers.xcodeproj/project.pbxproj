@@ -1,0 +1,480 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		080BC1DDBD2A40024F34091A /* ColorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845A4E653D3288428679CBE9 /* ColorUtils.swift */; };
+		0AE7A29C65DD1B78121C670C /* DiscoveredWordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE74F95572424CBCE2015B87 /* DiscoveredWordsView.swift */; };
+		0E17DA453F8296DB1D2F9F6A /* ChallengeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDCCD3431FB552FF42CABAC3 /* ChallengeView.swift */; };
+		103F480C60984516284A3C2C /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96396767F0ABC2C8F474D6B2 /* SpeechService.swift */; };
+		2F8D808AFD250AFF31784331 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F1F69A367A0E3C8A1FFE097 /* AudioPlayer.swift */; };
+		388C8B400936BB40A502A07B /* Letter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CB93A2B8DD935F3C24BC54 /* Letter.swift */; };
+		38AA5833AFF8DE010E687596 /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1150A9864A67C0A6B5FD1CE /* DictionaryService.swift */; };
+		3C0149FD49E2889B0E76DFC7 /* WordChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9EB6154B57B67BCB7E31B4 /* WordChallenge.swift */; };
+		3D9FA4BFC971C2A7174F4AEF /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D577D2BA389B4000862CCE7 /* Foundation.framework */; };
+		4517FE3C5EEE157C673E8926 /* CelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008072F8D4511D053A9309C2 /* CelebrationView.swift */; };
+		469F59072BDE1A816054011B /* Celebration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6CFC41B16D512EB82E7855D /* Celebration.swift */; };
+		49F16A81830B9222695F2EAE /* WordListLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA00EDB9F5519187C20E3B69 /* WordListLoader.swift */; };
+		63857D4CDF351C2A4389809D /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F2A9DA1F2EAF963762EDE4 /* WelcomeView.swift */; };
+		7E7B44CAD9E41C7B78E381B3 /* DiscoveredWord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2386CBDB86DCF415E34BF408 /* DiscoveredWord.swift */; };
+		84933AC6CDF20F17830F1E3E /* SessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34DF692385F72989FE6C873D /* SessionService.swift */; };
+		93FA2DA1581999FC1C484FE6 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC679AB32926C3865685FB0 /* AppConfig.swift */; };
+		969D467079D11E7FF17465AE /* sounds in Resources */ = {isa = PBXBuildFile; fileRef = 279C56112BCAE8753878B743 /* sounds */; };
+		98D4E782EE573690BF93C3F9 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB98BA6DFA6B3DFE1A8ED36A /* Session.swift */; };
+		A1D1D228B79EC36BE902DFDE /* WordsWithToddlersApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA89EC824CDA73977A73D7D /* WordsWithToddlersApp.swift */; };
+		A402C030C6611D606D37380C /* DiscoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02EC43F3C2FEDB1BB73C98A2 /* DiscoveryView.swift */; };
+		A92BCDD9D65C40457491C8E3 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CE87EA482026FF02EE1B714 /* ContentView.swift */; };
+		AC744714767369F6E7B1E87E /* ColoredLetterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B0EDE2B9F348579733485A /* ColoredLetterView.swift */; };
+		B4DE089A49DF8F8107C58307 /* word_lists in Resources */ = {isa = PBXBuildFile; fileRef = 23FBDC5CCBD35B68A633F6BC /* word_lists */; };
+		B561604567341C82FA0A2048 /* ChallengeMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED1CEBB3EBE6DF89601BCED7 /* ChallengeMode.swift */; };
+		BAC18AA001743215CF33C84C /* GradeLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104863944E17344E520C9BA3 /* GradeLevel.swift */; };
+		BB9B29D8E3B6B711CBBC5E1F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 480F05D1341A924D0886B53D /* SettingsView.swift */; };
+		C88A25910C2944475651C281 /* ConfigService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77213C8DE6AF973605F8FBCA /* ConfigService.swift */; };
+		E2D7488D27773C07927C9971 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CBA39F8375726C3D6DB4E91D /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		008072F8D4511D053A9309C2 /* CelebrationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelebrationView.swift; sourceTree = "<group>"; };
+		02EC43F3C2FEDB1BB73C98A2 /* DiscoveryView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DiscoveryView.swift; sourceTree = "<group>"; };
+		0D577D2BA389B4000862CCE7 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		0F9EB6154B57B67BCB7E31B4 /* WordChallenge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WordChallenge.swift; sourceTree = "<group>"; };
+		104863944E17344E520C9BA3 /* GradeLevel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GradeLevel.swift; sourceTree = "<group>"; };
+		1F1F69A367A0E3C8A1FFE097 /* AudioPlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
+		2386CBDB86DCF415E34BF408 /* DiscoveredWord.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DiscoveredWord.swift; sourceTree = "<group>"; };
+		23FBDC5CCBD35B68A633F6BC /* word_lists */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder; path = word_lists; sourceTree = "<group>"; };
+		279C56112BCAE8753878B743 /* sounds */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder; path = sounds; sourceTree = "<group>"; };
+		34DF692385F72989FE6C873D /* SessionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionService.swift; sourceTree = "<group>"; };
+		480F05D1341A924D0886B53D /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		63CB93A2B8DD935F3C24BC54 /* Letter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Letter.swift; sourceTree = "<group>"; };
+		77213C8DE6AF973605F8FBCA /* ConfigService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConfigService.swift; sourceTree = "<group>"; };
+		7CE87EA482026FF02EE1B714 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		845A4E653D3288428679CBE9 /* ColorUtils.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ColorUtils.swift; sourceTree = "<group>"; };
+		96396767F0ABC2C8F474D6B2 /* SpeechService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
+		9AC679AB32926C3865685FB0 /* AppConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		B6CFC41B16D512EB82E7855D /* Celebration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Celebration.swift; sourceTree = "<group>"; };
+		B8F2A9DA1F2EAF963762EDE4 /* WelcomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		BA00EDB9F5519187C20E3B69 /* WordListLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WordListLoader.swift; sourceTree = "<group>"; };
+		BCA89EC824CDA73977A73D7D /* WordsWithToddlersApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WordsWithToddlersApp.swift; sourceTree = "<group>"; };
+		BED1342A315E223B24600D29 /* WordsWithToddlers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WordsWithToddlers.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CB98BA6DFA6B3DFE1A8ED36A /* Session.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
+		CBA39F8375726C3D6DB4E91D /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CDCCD3431FB552FF42CABAC3 /* ChallengeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChallengeView.swift; sourceTree = "<group>"; };
+		D7B0EDE2B9F348579733485A /* ColoredLetterView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ColoredLetterView.swift; sourceTree = "<group>"; };
+		E1150A9864A67C0A6B5FD1CE /* DictionaryService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DictionaryService.swift; sourceTree = "<group>"; };
+		ED1CEBB3EBE6DF89601BCED7 /* ChallengeMode.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChallengeMode.swift; sourceTree = "<group>"; };
+		EE74F95572424CBCE2015B87 /* DiscoveredWordsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DiscoveredWordsView.swift; sourceTree = "<group>"; };
+		F5CB5FC43C05EEB4FE519876 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AB2D6F25875C336E0BA38537 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3D9FA4BFC971C2A7174F4AEF /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0BB2DC22989835DCB4A0E91E = {
+			isa = PBXGroup;
+			children = (
+				4235E0EBF656216B6B1CD2ED /* Products */,
+				7037A05358BAD0236AE36A33 /* Frameworks */,
+				906D7A20B1A99D1ADD943C7D /* WordsWithToddlers */,
+			);
+			sourceTree = "<group>";
+		};
+		366A40992BC5A98323B5C4EB /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				23FBDC5CCBD35B68A633F6BC /* word_lists */,
+				279C56112BCAE8753878B743 /* sounds */,
+			);
+			name = Resources;
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		3F14FA2F119961CA5BEAA1F0 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				008072F8D4511D053A9309C2 /* CelebrationView.swift */,
+				CDCCD3431FB552FF42CABAC3 /* ChallengeView.swift */,
+				D7B0EDE2B9F348579733485A /* ColoredLetterView.swift */,
+				7CE87EA482026FF02EE1B714 /* ContentView.swift */,
+				EE74F95572424CBCE2015B87 /* DiscoveredWordsView.swift */,
+				02EC43F3C2FEDB1BB73C98A2 /* DiscoveryView.swift */,
+				480F05D1341A924D0886B53D /* SettingsView.swift */,
+				B8F2A9DA1F2EAF963762EDE4 /* WelcomeView.swift */,
+			);
+			name = Views;
+			path = Views;
+			sourceTree = "<group>";
+		};
+		4235E0EBF656216B6B1CD2ED /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BED1342A315E223B24600D29 /* WordsWithToddlers.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4C319C281048CA108893E278 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				0D577D2BA389B4000862CCE7 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		7037A05358BAD0236AE36A33 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				4C319C281048CA108893E278 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		8860C2EA6E4C45F860F4E959 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				845A4E653D3288428679CBE9 /* ColorUtils.swift */,
+			);
+			name = Utilities;
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		8D9D7D4C4DBCE0541392C659 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				9AC679AB32926C3865685FB0 /* AppConfig.swift */,
+				B6CFC41B16D512EB82E7855D /* Celebration.swift */,
+				ED1CEBB3EBE6DF89601BCED7 /* ChallengeMode.swift */,
+				2386CBDB86DCF415E34BF408 /* DiscoveredWord.swift */,
+				104863944E17344E520C9BA3 /* GradeLevel.swift */,
+				63CB93A2B8DD935F3C24BC54 /* Letter.swift */,
+				CB98BA6DFA6B3DFE1A8ED36A /* Session.swift */,
+				0F9EB6154B57B67BCB7E31B4 /* WordChallenge.swift */,
+			);
+			name = Models;
+			path = Models;
+			sourceTree = "<group>";
+		};
+		906D7A20B1A99D1ADD943C7D /* WordsWithToddlers */ = {
+			isa = PBXGroup;
+			children = (
+				8D9D7D4C4DBCE0541392C659 /* Models */,
+				3F14FA2F119961CA5BEAA1F0 /* Views */,
+				B32EF98AE3EB0E351E221DD9 /* Services */,
+				8860C2EA6E4C45F860F4E959 /* Utilities */,
+				BCA89EC824CDA73977A73D7D /* WordsWithToddlersApp.swift */,
+				366A40992BC5A98323B5C4EB /* Resources */,
+				CBA39F8375726C3D6DB4E91D /* Assets.xcassets */,
+				F5CB5FC43C05EEB4FE519876 /* Info.plist */,
+			);
+			name = WordsWithToddlers;
+			path = WordsWithToddlers/WordsWithToddlers;
+			sourceTree = "<group>";
+		};
+		B32EF98AE3EB0E351E221DD9 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				1F1F69A367A0E3C8A1FFE097 /* AudioPlayer.swift */,
+				77213C8DE6AF973605F8FBCA /* ConfigService.swift */,
+				E1150A9864A67C0A6B5FD1CE /* DictionaryService.swift */,
+				34DF692385F72989FE6C873D /* SessionService.swift */,
+				96396767F0ABC2C8F474D6B2 /* SpeechService.swift */,
+				BA00EDB9F5519187C20E3B69 /* WordListLoader.swift */,
+			);
+			name = Services;
+			path = Services;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D9EBA18A071A09F6EE9BF45D /* WordsWithToddlers */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 12085F7ECE963A23CF27649E /* Build configuration list for PBXNativeTarget "WordsWithToddlers" */;
+			buildPhases = (
+				38549797602891FA5FDEE004 /* Sources */,
+				AB2D6F25875C336E0BA38537 /* Frameworks */,
+				BAD5AEF857699DEB901CA5D0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WordsWithToddlers;
+			productName = WordsWithToddlers;
+			productReference = BED1342A315E223B24600D29 /* WordsWithToddlers.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F936A3B7A7A64492766713EA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = 500A3F5962729BFA5F63D592 /* Build configuration list for PBXProject "WordsWithToddlers" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 0BB2DC22989835DCB4A0E91E;
+			minimizedProjectReferenceProxies = 0;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 4235E0EBF656216B6B1CD2ED /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D9EBA18A071A09F6EE9BF45D /* WordsWithToddlers */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BAD5AEF857699DEB901CA5D0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B4DE089A49DF8F8107C58307 /* word_lists in Resources */,
+				969D467079D11E7FF17465AE /* sounds in Resources */,
+				E2D7488D27773C07927C9971 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		38549797602891FA5FDEE004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				93FA2DA1581999FC1C484FE6 /* AppConfig.swift in Sources */,
+				469F59072BDE1A816054011B /* Celebration.swift in Sources */,
+				B561604567341C82FA0A2048 /* ChallengeMode.swift in Sources */,
+				7E7B44CAD9E41C7B78E381B3 /* DiscoveredWord.swift in Sources */,
+				BAC18AA001743215CF33C84C /* GradeLevel.swift in Sources */,
+				388C8B400936BB40A502A07B /* Letter.swift in Sources */,
+				98D4E782EE573690BF93C3F9 /* Session.swift in Sources */,
+				3C0149FD49E2889B0E76DFC7 /* WordChallenge.swift in Sources */,
+				4517FE3C5EEE157C673E8926 /* CelebrationView.swift in Sources */,
+				0E17DA453F8296DB1D2F9F6A /* ChallengeView.swift in Sources */,
+				AC744714767369F6E7B1E87E /* ColoredLetterView.swift in Sources */,
+				A92BCDD9D65C40457491C8E3 /* ContentView.swift in Sources */,
+				0AE7A29C65DD1B78121C670C /* DiscoveredWordsView.swift in Sources */,
+				A402C030C6611D606D37380C /* DiscoveryView.swift in Sources */,
+				BB9B29D8E3B6B711CBBC5E1F /* SettingsView.swift in Sources */,
+				63857D4CDF351C2A4389809D /* WelcomeView.swift in Sources */,
+				2F8D808AFD250AFF31784331 /* AudioPlayer.swift in Sources */,
+				C88A25910C2944475651C281 /* ConfigService.swift in Sources */,
+				38AA5833AFF8DE010E687596 /* DictionaryService.swift in Sources */,
+				84933AC6CDF20F17830F1E3E /* SessionService.swift in Sources */,
+				103F480C60984516284A3C2C /* SpeechService.swift in Sources */,
+				49F16A81830B9222695F2EAE /* WordListLoader.swift in Sources */,
+				080BC1DDBD2A40024F34091A /* ColorUtils.swift in Sources */,
+				A1D1D228B79EC36BE902DFDE /* WordsWithToddlersApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		25296DFD357FB6BB5A839DA0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		9E52A2F1E6D2C02CF44005B1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		C99F1D2D6190E8D2ADA72692 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WordsWithToddlers/WordsWithToddlers/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wecodefire.WordsWithToddlers;
+				PRODUCT_NAME = WordsWithToddlers;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E39D8E424593D5EE62F5BF3B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = WordsWithToddlers/WordsWithToddlers/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wecodefire.WordsWithToddlers;
+				PRODUCT_NAME = WordsWithToddlers;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		12085F7ECE963A23CF27649E /* Build configuration list for PBXNativeTarget "WordsWithToddlers" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E39D8E424593D5EE62F5BF3B /* Release */,
+				C99F1D2D6190E8D2ADA72692 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		500A3F5962729BFA5F63D592 /* Build configuration list for PBXProject "WordsWithToddlers" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9E52A2F1E6D2C02CF44005B1 /* Debug */,
+				25296DFD357FB6BB5A839DA0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F936A3B7A7A64492766713EA /* Project object */;
+}

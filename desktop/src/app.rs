@@ -1,7 +1,9 @@
 use crate::celebration::Celebration;
+use crate::config::ColorPalette;
 use crate::dictionary::Dictionary;
 use crate::discovered_word::DiscoveredWord;
 use crate::grade_level::GradeLevel;
+use crate::kiosk_mode::{KioskMode, KioskModeStatus};
 use crate::letter::Letter;
 use crate::message::Message;
 use crate::session::Session;
@@ -10,11 +12,12 @@ use crate::utils::color::hsl_to_rgb;
 use crate::word_challenge::{ChallengeMode, WordChallenge};
 use crate::word_list_loader::WordListLoader;
 use iced::{
-    alignment, event, exit, keyboard,
+    alignment, event, exit, keyboard, mouse,
     widget::{
-        button, column, container, row, scrollable, scrollable::Id as ScrollableId, text, Row,
+        button, canvas, column, container, row, scrollable, scrollable::Id as ScrollableId, stack,
+        text, Row,
     },
-    window, Color, Element, Event, Length, Subscription, Task, Theme,
+    window, Color, Element, Event, Length, Point, Rectangle, Renderer, Subscription, Task, Theme,
 };
 use std::sync::{atomic::AtomicBool, Arc};
 
@@ -45,6 +48,9 @@ pub struct WordsWithToddlers {
     word_challenge: Option<WordChallenge>,
     celebration: Option<Celebration>,
     tic_tac_toe: Option<TicTacToe>,
+    kiosk_mode: Option<KioskMode>,
+    kiosk_mode_enabled: bool,
+    color_palette: ColorPalette,
 }
 
 impl WordsWithToddlers {
@@ -63,13 +69,16 @@ impl WordsWithToddlers {
                 has_started_typing: false,
                 cursor_visible: true,
                 sound_playing: Arc::new(AtomicBool::new(false)),
-                current_screen: Screen::Welcome,
+                current_screen: Screen::Settings,
                 selected_sound: config.selected_sound,
                 use_uppercase: config.use_uppercase,
                 word_list_loader: WordListLoader::new(),
                 word_challenge: None,
                 celebration: None,
                 tic_tac_toe: None,
+                kiosk_mode: None,
+                kiosk_mode_enabled: config.kiosk_mode_enabled,
+                color_palette: config.color_palette,
             },
             // Send a message after a short delay to set window to AlwaysOnTop
             Task::perform(
@@ -231,6 +240,8 @@ impl WordsWithToddlers {
                     selected_sound: sound_name,
                     last_selected_grade: GradeLevel::default(),
                     use_uppercase: self.use_uppercase,
+                    kiosk_mode_enabled: self.kiosk_mode_enabled,
+                    color_palette: self.color_palette.clone(),
                 };
                 if let Err(e) = crate::config::save_config(&config) {
                     eprintln!("Failed to save config: {}", e);
@@ -246,6 +257,8 @@ impl WordsWithToddlers {
                     selected_sound: self.selected_sound.clone(),
                     last_selected_grade: GradeLevel::default(),
                     use_uppercase: value,
+                    kiosk_mode_enabled: self.kiosk_mode_enabled,
+                    color_palette: self.color_palette.clone(),
                 };
                 if let Err(e) = crate::config::save_config(&config) {
                     eprintln!("Failed to save config: {}", e);
@@ -254,13 +267,32 @@ impl WordsWithToddlers {
             }
 
             Message::StartTicTacToe => {
-                self.tic_tac_toe = Some(TicTacToe::new());
+                self.tic_tac_toe = Some(TicTacToe::new(crate::tic_tac_toe::GameMode::TwoPlayer));
+                self.current_screen = Screen::TicTacToe;
+                Task::none()
+            }
+            Message::StartTicTacToeOnePlayer => {
+                self.tic_tac_toe = Some(TicTacToe::new(crate::tic_tac_toe::GameMode::OnePlayer));
+                self.current_screen = Screen::TicTacToe;
+                Task::none()
+            }
+            Message::StartTicTacToeTwoPlayer => {
+                self.tic_tac_toe = Some(TicTacToe::new(crate::tic_tac_toe::GameMode::TwoPlayer));
                 self.current_screen = Screen::TicTacToe;
                 Task::none()
             }
             Message::TicTacToeMove(position) => {
                 if let Some(ref mut game) = self.tic_tac_toe {
                     game.make_move(position);
+                    if game.is_computer_turn() {
+                        return Task::done(Message::TicTacToeComputerMove);
+                    }
+                }
+                Task::none()
+            }
+            Message::TicTacToeComputerMove => {
+                if let Some(ref mut game) = self.tic_tac_toe {
+                    game.computer_move();
                 }
                 Task::none()
             }
@@ -275,6 +307,100 @@ impl WordsWithToddlers {
                 self.current_screen = Screen::Welcome;
                 Task::none()
             }
+            Message::ToggleKioskMode(enable) => {
+                #[cfg(target_os = "macos")]
+                {
+                    if enable {
+                        let has_permission = crate::kiosk_mode::permission::has_accessibility_permission();
+                        eprintln!("Kiosk mode requested. Has accessibility permission: {}", has_permission);
+
+                        if !has_permission {
+                            eprintln!("Requesting accessibility permission...");
+                            return Task::done(Message::RequestAccessibilityPermission);
+                        }
+
+                        eprintln!("Starting kiosk mode...");
+                        match KioskMode::start() {
+                            Ok(kiosk) => {
+                                self.kiosk_mode = Some(kiosk);
+                                self.kiosk_mode_enabled = true;
+                                self.save_kiosk_config(true);
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to start kiosk mode: {}", e);
+                                return Task::done(Message::KioskModeStatusChanged(
+                                    KioskModeStatus::Error(e.to_string()),
+                                ));
+                            }
+                        }
+                    } else {
+                        if let Some(mut kiosk) = self.kiosk_mode.take() {
+                            kiosk.stop();
+                        }
+                        self.kiosk_mode_enabled = false;
+                        self.save_kiosk_config(false);
+                    }
+                }
+
+                #[cfg(not(target_os = "macos"))]
+                {
+                    let _ = enable;
+                    eprintln!("Kiosk mode is only available on macOS");
+                }
+
+                Task::none()
+            }
+            Message::KioskModeStatusChanged(status) => {
+                match status {
+                    KioskModeStatus::Error(msg) => {
+                        eprintln!("Kiosk mode error: {}", msg);
+                    }
+                    KioskModeStatus::PermissionRequired => {
+                        eprintln!("Accessibility permission required for kiosk mode");
+                    }
+                    _ => {}
+                }
+                Task::none()
+            }
+            Message::RequestAccessibilityPermission => {
+                #[cfg(target_os = "macos")]
+                {
+                    let granted = crate::kiosk_mode::permission::request_accessibility_permission();
+                    if !granted {
+                        crate::kiosk_mode::permission::open_accessibility_preferences();
+                    }
+                }
+                Task::none()
+            }
+            Message::SelectColorPalette(palette) => {
+                self.color_palette = palette.clone();
+
+                let config = crate::config::AppConfig {
+                    selected_sound: self.selected_sound.clone(),
+                    last_selected_grade: GradeLevel::default(),
+                    use_uppercase: self.use_uppercase,
+                    kiosk_mode_enabled: self.kiosk_mode_enabled,
+                    color_palette: palette,
+                };
+                if let Err(e) = crate::config::save_config(&config) {
+                    eprintln!("Failed to save config: {}", e);
+                }
+                Task::none()
+            }
+        }
+    }
+
+    /// Saves kiosk mode setting to config
+    fn save_kiosk_config(&self, enabled: bool) {
+        let config = crate::config::AppConfig {
+            selected_sound: self.selected_sound.clone(),
+            last_selected_grade: GradeLevel::default(),
+            use_uppercase: self.use_uppercase,
+            kiosk_mode_enabled: enabled,
+            color_palette: self.color_palette.clone(),
+        };
+        if let Err(e) = crate::config::save_config(&config) {
+            eprintln!("Failed to save kiosk config: {}", e);
         }
     }
 
@@ -348,6 +474,15 @@ impl WordsWithToddlers {
         // Handle tic-tac-toe separately
         if self.current_screen == Screen::TicTacToe {
             return self.handle_tictactoe_key_press(key);
+        }
+
+        // Handle Settings screen - Escape goes back to Welcome
+        if self.current_screen == Screen::Settings {
+            if let keyboard::Key::Named(keyboard::key::Named::Escape) = key {
+                self.current_screen = Screen::Welcome;
+                return Task::none();
+            }
+            return Task::none();
         }
 
         match key {
@@ -600,43 +735,36 @@ impl WordsWithToddlers {
         .into()
     }
 
-    /// Builds the settings screen for sound selection
+    /// Builds the settings screen
     fn build_settings_screen(&self) -> Element<'_, Message> {
         let title = text("Settings")
-            .size(60)
+            .size(48)
             .color(Color::from_rgb(0.9, 0.9, 1.0));
 
-        let sound_subtitle = text("Select the sound that plays when you press Enter")
-            .size(25)
-            .color(Color::from_rgb(0.6, 0.6, 0.6));
+        // --- Left column: Sounds + Word Display ---
 
-        let case_subtitle = text("Word Display")
-            .size(40)
+        let sound_label = text("Sound Effect")
+            .size(28)
             .color(Color::from_rgb(0.9, 0.9, 1.0));
 
-        // Create grid of sound buttons
-        let mut sounds_grid = column![].spacing(15).align_x(alignment::Horizontal::Center);
-
-        // Create rows of 3 sound buttons each
+        let mut sounds_grid = column![].spacing(8).align_x(alignment::Horizontal::Center);
         let sounds = crate::system_sound::SOUNDS;
         for row_sounds in sounds.chunks(3) {
-            let mut sound_row = row![].spacing(15).align_y(alignment::Vertical::Center);
-
+            let mut sound_row = row![].spacing(10).align_y(alignment::Vertical::Center);
             for sound in row_sounds {
                 let is_selected = sound.name == self.selected_sound;
                 let button_color = if is_selected {
-                    Color::from_rgb(0.2, 0.6, 0.9) // Blue for selected
+                    Color::from_rgb(0.2, 0.6, 0.9)
                 } else {
-                    Color::from_rgb(0.3, 0.3, 0.35) // Gray for unselected
+                    Color::from_rgb(0.3, 0.3, 0.35)
                 };
-
                 let sound_button =
-                    button(text(sound.display_name).size(30).color(if is_selected {
+                    button(text(sound.display_name).size(22).color(if is_selected {
                         Color::from_rgb(1.0, 1.0, 1.0)
                     } else {
                         Color::from_rgb(0.8, 0.8, 0.8)
                     }))
-                    .padding(20)
+                    .padding(12)
                     .style(move |_theme: &Theme, _status| button::Style {
                         background: Some(iced::Background::Color(button_color)),
                         border: iced::Border {
@@ -646,27 +774,28 @@ impl WordsWithToddlers {
                                 Color::from_rgb(0.4, 0.4, 0.45)
                             },
                             width: if is_selected { 3.0 } else { 1.0 },
-                            radius: 10.0.into(),
+                            radius: 8.0.into(),
                         },
                         ..Default::default()
                     })
                     .on_press(Message::SelectSound(sound.name.to_string()));
-
                 sound_row = sound_row.push(sound_button);
             }
-
             sounds_grid = sounds_grid.push(sound_row);
         }
 
-        // Case toggle buttons
-        let uppercase_button = button(text("ABC (Uppercase)").size(30).color(
+        let case_label = text("Word Display")
+            .size(28)
+            .color(Color::from_rgb(0.9, 0.9, 1.0));
+
+        let uppercase_button = button(text("ABC").size(22).color(
             if self.use_uppercase {
                 Color::from_rgb(1.0, 1.0, 1.0)
             } else {
                 Color::from_rgb(0.8, 0.8, 0.8)
             },
         ))
-        .padding(20)
+        .padding(12)
         .style(move |_theme: &Theme, _status| button::Style {
             background: Some(iced::Background::Color(if self.use_uppercase {
                 Color::from_rgb(0.2, 0.6, 0.9)
@@ -680,20 +809,20 @@ impl WordsWithToddlers {
                     Color::from_rgb(0.4, 0.4, 0.45)
                 },
                 width: if self.use_uppercase { 3.0 } else { 1.0 },
-                radius: 10.0.into(),
+                radius: 8.0.into(),
             },
             ..Default::default()
         })
         .on_press(Message::ToggleUppercase(true));
 
-        let lowercase_button = button(text("abc (Lowercase)").size(30).color(
+        let lowercase_button = button(text("abc").size(22).color(
             if !self.use_uppercase {
                 Color::from_rgb(1.0, 1.0, 1.0)
             } else {
                 Color::from_rgb(0.8, 0.8, 0.8)
             },
         ))
-        .padding(20)
+        .padding(12)
         .style(move |_theme: &Theme, _status| button::Style {
             background: Some(iced::Background::Color(if !self.use_uppercase {
                 Color::from_rgb(0.2, 0.6, 0.9)
@@ -707,36 +836,178 @@ impl WordsWithToddlers {
                     Color::from_rgb(0.4, 0.4, 0.45)
                 },
                 width: if !self.use_uppercase { 3.0 } else { 1.0 },
-                radius: 10.0.into(),
+                radius: 8.0.into(),
             },
             ..Default::default()
         })
         .on_press(Message::ToggleUppercase(false));
 
         let case_toggle_row = row![uppercase_button, lowercase_button]
-            .spacing(15)
+            .spacing(10)
             .align_y(alignment::Vertical::Center);
 
-        // Back button
-        let back_button = button(text("← Back to Welcome").size(25))
-            .padding(15)
+        // Kiosk mode section (macOS only)
+        #[cfg(target_os = "macos")]
+        let kiosk_section = {
+            let kiosk_label = text("Kiosk Mode")
+                .size(28)
+                .color(Color::from_rgb(0.9, 0.9, 1.0));
+
+            let kiosk_desc = text("Blocks Cmd+Tab and similar shortcuts")
+                .size(16)
+                .color(Color::from_rgb(0.6, 0.6, 0.6));
+
+            let kiosk_enabled = self.kiosk_mode_enabled;
+
+            let enable_button = button(text("On").size(22).color(
+                if kiosk_enabled {
+                    Color::from_rgb(1.0, 1.0, 1.0)
+                } else {
+                    Color::from_rgb(0.8, 0.8, 0.8)
+                },
+            ))
+            .padding(12)
+            .style(move |_theme: &Theme, _status| button::Style {
+                background: Some(iced::Background::Color(if kiosk_enabled {
+                    Color::from_rgb(0.2, 0.7, 0.3)
+                } else {
+                    Color::from_rgb(0.3, 0.3, 0.35)
+                })),
+                border: iced::Border {
+                    color: if kiosk_enabled {
+                        Color::from_rgb(0.4, 0.9, 0.5)
+                    } else {
+                        Color::from_rgb(0.4, 0.4, 0.45)
+                    },
+                    width: if kiosk_enabled { 3.0 } else { 1.0 },
+                    radius: 8.0.into(),
+                },
+                ..Default::default()
+            })
+            .on_press(Message::ToggleKioskMode(true));
+
+            let disable_button = button(text("Off").size(22).color(
+                if !kiosk_enabled {
+                    Color::from_rgb(1.0, 1.0, 1.0)
+                } else {
+                    Color::from_rgb(0.8, 0.8, 0.8)
+                },
+            ))
+            .padding(12)
+            .style(move |_theme: &Theme, _status| button::Style {
+                background: Some(iced::Background::Color(if !kiosk_enabled {
+                    Color::from_rgb(0.6, 0.2, 0.2)
+                } else {
+                    Color::from_rgb(0.3, 0.3, 0.35)
+                })),
+                border: iced::Border {
+                    color: if !kiosk_enabled {
+                        Color::from_rgb(0.8, 0.4, 0.4)
+                    } else {
+                        Color::from_rgb(0.4, 0.4, 0.45)
+                    },
+                    width: if !kiosk_enabled { 3.0 } else { 1.0 },
+                    radius: 8.0.into(),
+                },
+                ..Default::default()
+            })
+            .on_press(Message::ToggleKioskMode(false));
+
+            let kiosk_toggle_row = row![enable_button, disable_button]
+                .spacing(10)
+                .align_y(alignment::Vertical::Center);
+
+            column![kiosk_label, kiosk_desc, kiosk_toggle_row]
+                .spacing(10)
+                .align_x(alignment::Horizontal::Center)
+        };
+
+        #[cfg(not(target_os = "macos"))]
+        let kiosk_section = column![];
+
+        let left_column = column![sound_label, sounds_grid, case_label, case_toggle_row, kiosk_section]
+            .spacing(20)
+            .align_x(alignment::Horizontal::Center)
+            .width(Length::FillPortion(1));
+
+        // --- Right column: Color Palette ---
+
+        let palette_label = text("Letter Colors")
+            .size(28)
+            .color(Color::from_rgb(0.9, 0.9, 1.0));
+
+        let mut palette_grid = column![].spacing(8).align_x(alignment::Horizontal::Center);
+        let palettes = ColorPalette::all();
+        for row_palettes in palettes.chunks(2) {
+            let mut palette_row = row![].spacing(10).align_y(alignment::Vertical::Center);
+            for palette in row_palettes {
+                let is_selected = *palette == self.color_palette;
+                let (pr, pg, pb) = palette.preview_color();
+                let preview_color = Color::from_rgb(pr, pg, pb);
+                let palette_clone = palette.clone();
+
+                let label_row = row![
+                    text("\u{25CF} ").size(20).color(preview_color),
+                    text(palette.display_name()).size(20).color(if is_selected {
+                        Color::from_rgb(1.0, 1.0, 1.0)
+                    } else {
+                        Color::from_rgb(0.8, 0.8, 0.8)
+                    }),
+                ]
+                .align_y(alignment::Vertical::Center);
+
+                let button_color = if is_selected {
+                    Color::from_rgb(0.2, 0.6, 0.9)
+                } else {
+                    Color::from_rgb(0.3, 0.3, 0.35)
+                };
+
+                let palette_button = button(label_row)
+                    .padding(12)
+                    .width(Length::Fill)
+                    .style(move |_theme: &Theme, _status| button::Style {
+                        background: Some(iced::Background::Color(button_color)),
+                        border: iced::Border {
+                            color: if is_selected {
+                                Color::from_rgb(0.4, 0.8, 1.0)
+                            } else {
+                                Color::from_rgb(0.4, 0.4, 0.45)
+                            },
+                            width: if is_selected { 3.0 } else { 1.0 },
+                            radius: 8.0.into(),
+                        },
+                        ..Default::default()
+                    })
+                    .on_press(Message::SelectColorPalette(palette_clone));
+
+                palette_row = palette_row.push(palette_button);
+            }
+            palette_grid = palette_grid.push(palette_row);
+        }
+
+        let right_column = column![palette_label, palette_grid]
+            .spacing(20)
+            .align_x(alignment::Horizontal::Center)
+            .width(Length::FillPortion(1));
+
+        // --- Assemble layout ---
+
+        let columns = row![left_column, right_column]
+            .spacing(40)
+            .align_y(alignment::Vertical::Top);
+
+        let back_button = button(text("\u{2190} Back to Welcome").size(22))
+            .padding(12)
             .on_press(Message::NavigateToWelcome);
 
-        let content = column![
-            title,
-            sound_subtitle,
-            sounds_grid,
-            case_subtitle,
-            case_toggle_row,
-            back_button,
-        ]
-        .spacing(40)
-        .align_x(alignment::Horizontal::Center);
+        let content = column![title, columns, back_button]
+            .spacing(25)
+            .padding(30)
+            .align_x(alignment::Horizontal::Center);
 
         container(content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .padding(40)
             .align_x(alignment::Horizontal::Center)
             .align_y(alignment::Vertical::Center)
             .into()
@@ -864,12 +1135,13 @@ impl WordsWithToddlers {
         .into()
     }
 
-    /// Generates a random bright color for the letters
+    /// Generates a random color based on the selected palette
     fn random_color(&self) -> Color {
         use rand::Rng;
         let mut rng = rand::thread_rng();
-        let hue = rng.gen_range(0.0..360.0);
-        let (r, g, b) = hsl_to_rgb(hue, 0.8, 0.6);
+        let (hue_min, hue_max, saturation, lightness) = self.color_palette.color_params();
+        let hue = rng.gen_range(hue_min..hue_max);
+        let (r, g, b) = hsl_to_rgb(hue, saturation, lightness);
         Color::from_rgb(r, g, b)
     }
 
@@ -1014,23 +1286,66 @@ impl WordsWithToddlers {
                 .size(60)
                 .color(Color::from_rgb(0.9, 0.9, 1.0));
 
-            // Game status message
-            let status_text = match game.game_state {
+            // Game status message with special styling
+            let status_element: Element<'_, Message> = match &game.game_state {
                 crate::tic_tac_toe::GameState::Playing => {
-                    format!("Player {}'s Turn", game.current_player())
+                    let turn_text = if game.mode == crate::tic_tac_toe::GameMode::OnePlayer {
+                        if game.current_player() == crate::tic_tac_toe::Player::X {
+                            "Your Turn (X)".to_string()
+                        } else {
+                            "Computer's Turn (O)".to_string()
+                        }
+                    } else {
+                        format!("Player {}'s Turn", game.current_player())
+                    };
+                    text(turn_text)
+                        .size(40)
+                        .color(Color::from_rgb(0.8, 0.8, 0.9))
+                        .into()
                 }
                 crate::tic_tac_toe::GameState::Won(player) => {
-                    format!("Player {} Wins!", player)
+                    let win_text = if game.mode == crate::tic_tac_toe::GameMode::OnePlayer {
+                        if *player == crate::tic_tac_toe::Player::X {
+                            "You Win!".to_string()
+                        } else {
+                            "Computer Wins!".to_string()
+                        }
+                    } else {
+                        format!("Player {} Wins!", player)
+                    };
+                    let mut rainbow_row = row![].spacing(2).align_y(alignment::Vertical::Center);
+
+                    for (i, ch) in win_text.chars().enumerate() {
+                        let hue = (i as f32 * 30.0) % 360.0;
+                        let (r, g, b) = hsl_to_rgb(hue, 0.8, 0.6);
+                        let char_text = text(ch.to_string())
+                            .size(40)
+                            .color(Color::from_rgb(r, g, b));
+                        rainbow_row = rainbow_row.push(char_text);
+                    }
+
+                    rainbow_row.into()
                 }
-                crate::tic_tac_toe::GameState::Draw => "It's a Draw!".to_string(),
+                crate::tic_tac_toe::GameState::Draw => {
+                    // CATS game with cat emojis
+                    text("🐱 CATS 🐱 GAME 🐱")
+                        .size(40)
+                        .color(Color::from_rgb(0.9, 0.7, 0.4))
+                        .into()
+                }
             };
 
-            let status = text(status_text)
-                .size(40)
-                .color(Color::from_rgb(0.8, 0.8, 0.9));
-
-            // Build the 3x3 grid
+            // Build the 3x3 grid with winning line highlight
             let mut board_rows = column![].spacing(10).align_x(alignment::Horizontal::Center);
+
+            // Check if each position is part of the winning line
+            let is_winning_cell = |pos: usize| -> bool {
+                if let Some(line) = game.winning_line {
+                    line.contains(&pos)
+                } else {
+                    false
+                }
+            };
 
             for row in 0..3 {
                 let mut board_row = row![].spacing(10).align_y(alignment::Vertical::Center);
@@ -1049,16 +1364,35 @@ impl WordsWithToddlers {
                         None => Color::from_rgb(0.5, 0.5, 0.5),
                     };
 
-                    let cell_button = button(text(cell_content).size(80).color(cell_color))
+                    // Highlight winning cells with rainbow border
+                    let is_winner = is_winning_cell(position);
+                    let border_color = if is_winner {
+                        // Rainbow effect for winning line
+                        let hue = (position as f32 * 120.0) % 360.0;
+                        let (r, g, b) = hsl_to_rgb(hue, 1.0, 0.5);
+                        Color::from_rgb(r, g, b)
+                    } else {
+                        Color::from_rgb(0.4, 0.4, 0.5)
+                    };
+
+                    let border_width = if is_winner { 5.0 } else { 3.0 };
+
+                    let cell_label = container(text(cell_content).size(80).color(cell_color))
+                        .width(Length::Fill)
+                        .height(Length::Fill)
+                        .align_x(alignment::Horizontal::Center)
+                        .align_y(alignment::Vertical::Center);
+
+                    let cell_button = button(cell_label)
                         .width(Length::Fixed(120.0))
                         .height(Length::Fixed(120.0))
-                        .style(|_theme: &Theme, _status| button::Style {
+                        .style(move |_theme: &Theme, _status| button::Style {
                             background: Some(iced::Background::Color(Color::from_rgb(
                                 0.15, 0.15, 0.2,
                             ))),
                             border: iced::Border {
-                                color: Color::from_rgb(0.4, 0.4, 0.5),
-                                width: 3.0,
+                                color: border_color,
+                                width: border_width,
                                 radius: 10.0.into(),
                             },
                             ..Default::default()
@@ -1085,6 +1419,29 @@ impl WordsWithToddlers {
                 })
                 .on_press(Message::ResetTicTacToe);
 
+            let one_player_message = if game.mode == crate::tic_tac_toe::GameMode::OnePlayer {
+                Message::StartTicTacToeTwoPlayer
+            } else {
+                Message::StartTicTacToeOnePlayer
+            };
+            let one_player_label = if game.mode == crate::tic_tac_toe::GameMode::OnePlayer {
+                "🔄 New Game (2 Player)"
+            } else {
+                "🔄 New Game (1 Player)"
+            };
+            let switch_mode_button = button(text(one_player_label).size(25))
+                .padding(15)
+                .style(|_theme: &Theme, _status| button::Style {
+                    background: Some(iced::Background::Color(Color::from_rgb(0.2, 0.4, 0.7))),
+                    border: iced::Border {
+                        color: Color::from_rgb(0.3, 0.6, 0.9),
+                        width: 2.0,
+                        radius: 10.0.into(),
+                    },
+                    ..Default::default()
+                })
+                .on_press(one_player_message);
+
             let back_button = button(text("⬅️  Back").size(25))
                 .padding(15)
                 .style(|_theme: &Theme, _status| button::Style {
@@ -1098,7 +1455,7 @@ impl WordsWithToddlers {
                 })
                 .on_press(Message::ExitTicTacToe);
 
-            let buttons_row = row![reset_button, back_button]
+            let buttons_row = row![reset_button, switch_mode_button, back_button]
                 .spacing(20)
                 .align_y(alignment::Vertical::Center);
 
@@ -1106,8 +1463,23 @@ impl WordsWithToddlers {
                 .size(20)
                 .color(Color::from_rgb(0.5, 0.5, 0.6));
 
+            // Overlay winning line on board if there is one
+            let board_widget: Element<'_, Message> = if let Some(winning_line) = game.winning_line {
+                let line_overlay = WinningLineOverlay { winning_line };
+                let line_canvas = canvas(line_overlay)
+                    .width(Length::Fixed(380.0))
+                    .height(Length::Fixed(380.0));
+
+                stack![board_rows, line_canvas]
+                    .width(Length::Shrink)
+                    .height(Length::Shrink)
+                    .into()
+            } else {
+                board_rows.into()
+            };
+
             container(
-                column![title, status, board_rows, buttons_row, instructions]
+                column![title, status_element, board_widget, buttons_row, instructions]
                     .spacing(30)
                     .align_x(alignment::Horizontal::Center),
             )
@@ -1186,5 +1558,49 @@ impl WordsWithToddlers {
             _ => {}
         }
         Task::none()
+    }
+}
+
+/// Canvas program that draws a line through the winning cells in tic-tac-toe
+struct WinningLineOverlay {
+    winning_line: [usize; 3],
+}
+
+impl WinningLineOverlay {
+    /// Converts a board position (0-8) to pixel coordinates within the board
+    fn cell_center(position: usize) -> Point {
+        let col = position % 3;
+        let row = position / 3;
+        Point::new(col as f32 * 130.0 + 60.0, row as f32 * 130.0 + 60.0)
+    }
+}
+
+impl<Message> canvas::Program<Message> for WinningLineOverlay {
+    type State = ();
+
+    fn draw(
+        &self,
+        _state: &(),
+        renderer: &Renderer,
+        _theme: &Theme,
+        bounds: Rectangle,
+        _cursor: mouse::Cursor,
+    ) -> Vec<canvas::Geometry> {
+        let mut frame = canvas::Frame::new(renderer, bounds.size());
+
+        let start = Self::cell_center(self.winning_line[0]);
+        let end = Self::cell_center(self.winning_line[2]);
+
+        let line = canvas::Path::line(start, end);
+
+        frame.stroke(
+            &line,
+            canvas::Stroke::default()
+                .with_color(Color::from_rgba(1.0, 1.0, 0.2, 0.85))
+                .with_width(8.0)
+                .with_line_cap(canvas::stroke::LineCap::Round),
+        );
+
+        vec![frame.into_geometry()]
     }
 }

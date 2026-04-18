@@ -5,6 +5,7 @@ mod config;
 mod dictionary;
 mod discovered_word;
 mod grade_level;
+mod kiosk_mode;
 mod letter;
 mod message;
 mod session;
